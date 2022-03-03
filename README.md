@@ -12,7 +12,7 @@ It's installed without any configuration, since no relational database (like MyS
 
 
 ## Why BoidCMS?
-Short history, Who?, Why? , You can find more [about](about) it...
+Short history, Who?, Why? , You can find more [about](https://boidcms.github.io/about) it...
 
 
 ## Features
@@ -20,7 +20,7 @@ Short history, Who?, Why? , You can find more [about](about) it...
 - Powerful plugin system
 - Easy to customize using themes
 - GDPR Compliant...
-[All features](features)
+[All features](https://boidcms.github.io/features)
 
 
 ## Support
@@ -28,4 +28,4 @@ Short history, Who?, Why? , You can find more [about](about) it...
 
 
 ## License
-BoidCMS is an open source software [licensed](license) under the GNU General Public License v3.
+BoidCMS is an open source software [licensed](LICENSE) under the GNU General Public License v3.
