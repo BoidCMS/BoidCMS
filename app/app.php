@@ -9,7 +9,7 @@
  * @package BoidCMS
  * @author Shoaiyb Sysa
  * @link https://boidcms.github.io
- * @version 1.0.0
+ * @version 1.0.1
  * @licence MIT
  */
 class App {
@@ -44,7 +44,7 @@ class App {
   public $plugins;
   
   /**
-   * Current installation version
+   * Current installed version
    * @var string $version
    */
   public $version;
@@ -81,7 +81,7 @@ class App {
       file_put_contents( $this->root( 'data/database.json' ), json_encode( $config, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE ), LOCK_EX );
     }
     $this->actions = array();
-    $this->version = '1.0.0';
+    $this->version = '1.0.1';
     $this->logged_in = ( isset( $_SESSION[ 'logged_in' ], $_SESSION[ 'root' ] ) ? $this->root === $_SESSION[ 'root' ] : false );
     $this->database = json_decode( file_get_contents( $this->root( 'data/database.json' ) ), true );
     $this->plugins = array_map( 'basename', glob( $this->root( 'plugins/*' ), GLOB_ONLYDIR ) );
@@ -231,7 +231,7 @@ class App {
    * @return string
    */
   public function token(): string {
-    return ( $_SESSION[ 'token' ] ?? $_SESSION[ 'token' ] = bin2hex( random_bytes(32) ) );
+    return ( $_SESSION[ 'token' ] ??= bin2hex( random_bytes(32) ) );
   }
   
   /**
@@ -289,6 +289,7 @@ class App {
    * @return mixed
    */
   public function get_filter( mixed $value, string $action, mixed ...$args ): mixed {
+    $this->load_actions();
     if ( isset( $this->actions[ $action ] ) ) {
       $actions = $this->actions[ $action ];
       $priorities = array_keys( $actions );
@@ -626,8 +627,7 @@ class App {
    * @return void
    */
   public function auth( ?string $location = null, bool $post = true ): void {
-    $query = rtrim( '?' . http_build_query( $_GET ), '?' );
-    $location = ( $location ?? ( $this->page . $query ) );
+    $location = ( $location ?? $this->page );
     $token = ( $post ? ( $_POST[ 'token' ] ?? '' ) : ( $_GET[ 'token' ] ?? '' ) );
     if ( ! hash_equals( $this->token(), $token ) ) {
       $this->get_action( 'token_error', $token );
