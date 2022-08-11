@@ -9,7 +9,7 @@
  * @package BoidCMS
  * @author Shoaiyb Sysa
  * @link https://boidcms.github.io
- * @version 1.0.0
+ * @version 1.0.1
  * @licence MIT
  */
 session_start();
