@@ -9,7 +9,7 @@
  * @package BoidCMS
  * @author Shoaiyb Sysa
  * @link https://boidcms.github.io
- * @version 1.0.1
+ * @version 2.0.0
  * @licence MIT
  */
 class App {
@@ -69,20 +69,21 @@ class App {
   
   /**
    * Constructor
-   * @param array $config
-   * @param ?string $root
+   * @param string $root
    */
-  public function __construct( array $config, ?string $root = null ) {
+  public function __construct( string $root ) {
     $this->root = $root;
-    if ( ! file_exists( $this->root( 'data/database.json' ) ) ) {
+    if ( ! is_file( $this->root( 'data/database.json' ) ) ) {
+      $config = require $this->root( 'config.php' );
       ( is_dir( $this->root( 'data' ) ) ?: mkdir( $this->root( 'data' ) ) );
       ( is_dir( $this->root( 'media' ) ) ?: mkdir( $this->root( 'media' ) ) );
       ( is_dir( $this->root( 'plugins' ) ) ?: mkdir( $this->root( 'plugins' ) ) );
-      file_put_contents( $this->root( 'data/database.json' ), json_encode( $config, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE ), LOCK_EX );
+      $json = json_encode( $config, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE );
+      file_put_contents( $this->root( 'data/database.json' ), $json, LOCK_EX );
     }
     $this->actions = array();
-    $this->version = '1.0.1';
-    $this->logged_in = ( isset( $_SESSION[ 'logged_in' ], $_SESSION[ 'root' ] ) ? $this->root === $_SESSION[ 'root' ] : false );
+    $this->version = '2.0.0';
+    $this->logged_in = ( isset( $_SESSION[ 'logged_in' ], $_SESSION[ 'root' ] ) && $this->root === $_SESSION[ 'root' ] );
     $this->database = json_decode( file_get_contents( $this->root( 'data/database.json' ) ), true );
     $this->plugins = array_map( 'basename', glob( $this->root( 'plugins/*' ), GLOB_ONLYDIR ) );
     $this->themes = array_map( 'basename', glob( $this->root( 'themes/*' ), GLOB_ONLYDIR ) );
@@ -102,7 +103,7 @@ class App {
   }
   
   /**
-   * Array custom options list
+   * Array custom list filter
    * @param string $callback
    * @param array $custom
    * @return array
@@ -151,12 +152,12 @@ class App {
   }
   
   /**
-   * Get key from database
+   * Get value of key from database
    * @param string $index
    * @return mixed
    */
   public function get( string $index ): mixed {
-    return ( $this->data()[ 'site' ][ $index ] ?? null );
+    return ( $this->data( 'site' )[ $index ] ?? null );
   }
   
   /**
@@ -169,15 +170,14 @@ class App {
   }
   
   /**
-   * Full site with admin url
+   * Absolute or relative admin url
    * @param string $location
    * @param bool $abs
    * @return string
    */
   public function admin_url( string $location = '', bool $abs = false ): string {
-    $relative = ( $this->get( 'admin' ) . $location );
-    $absolute = $this->url( $this->get( 'admin' ) . $location );
-    return ( $abs ? $absolute : $relative );
+    $location = ( $this->get( 'admin' ) . $location );
+    return ( $abs ? $this->url( $location ) : $location );
   }
   
   /**
@@ -190,7 +190,7 @@ class App {
   }
   
   /**
-   * Get filename from current theme
+   * Get filename from current theme directory
    * @param string $location
    * @param string $system
    * @return string
@@ -206,7 +206,7 @@ class App {
    * @return bool
    */
   public function save( ?array $data = null ): bool {
-    $data = ( $data ?? $this->data() );
+    $data ??= $this->data();
     $json = json_encode( $data, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE );
     $whole = isset( $data[ 'site' ], $data[ 'pages' ], $data[ 'installed' ] );
     if ( empty( $data ) || ! $whole || json_last_error() !== JSON_ERROR_NONE ) {
@@ -220,10 +220,15 @@ class App {
   
   /**
    * Readonly version of database
+   * @param ?string $index
    * @return array
    */
-  public function data(): array {
-    return $this->database;
+  public function data( ?string $index = null ): array {
+    $data = $this->database;
+    if ( ! is_null( $index ) ) {
+      return ( $data[ $index ] ?? null );
+    }
+    return $data;
   }
   
   /**
@@ -235,7 +240,7 @@ class App {
   }
   
   /**
-   * Set another action to actions
+   * Set a callback function to action
    * @param string | array $action
    * @param callable $callback
    * @param int $priority
@@ -263,7 +268,7 @@ class App {
   }
   
   /**
-   * Get all actions from the given action
+   * Call all callback functions from the given action
    * @param string $action
    * @param mixed ...$args
    * @return mixed
@@ -309,14 +314,14 @@ class App {
    * @return void
    */
   public function load_actions(): void {
-    foreach ( $this->data()[ 'installed' ] as $plugin ) {
+    foreach ( $this->data( 'installed' ) as $plugin ) {
       $plugin = $this->root( 'plugins/' . $plugin . '/plugin.php' );
-      if ( file_exists( $plugin ) ) {
+      if ( is_file( $plugin ) ) {
         include_once ( $plugin );
       }
     }
     $functions = $this->theme( 'functions.php' );
-    if ( file_exists( $functions ) ) {
+    if ( is_file( $functions ) ) {
       include_once ( $functions );
     }
   }
@@ -364,8 +369,8 @@ class App {
    */
   public function page( string $index, ?string $page = null ): mixed {
     $page ??= $this->page;
-    if ( isset( $this->data()[ 'pages' ][ $page ] ) ) {
-      $data = $this->data()[ 'pages' ][ $page ];
+    if ( $this->is_page( $page ) ) {
+      $data = $this->data( 'pages' )[ $page ];
       if ( isset( $data[ $index ] ) ) {
         $args = array( $index, $page, $data );
         return $this->_( $data[ $index ], 'page', ...$args );
@@ -395,7 +400,7 @@ class App {
    */
   public function update_page( string $slug, string $permalink, array $updates ): bool {
     $this->get_action( 'update_page', $slug, $permalink, $updates );
-    $updates = array_merge( $this->data()[ 'pages' ][ $slug ], $updates );
+    $updates = array_merge( $this->data( 'pages' )[ $slug ], $updates );
     $this->database[ 'pages' ][ $slug ] = $updates;
     $data = json_encode( $this->database, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE );
     $data = str_replace( '"' . addcslashes( $slug, '\/' ) . '":', '"' . addcslashes( $permalink, '\/' ) . '":', $data );
@@ -411,6 +416,15 @@ class App {
     $this->get_action( 'delete_page', $slug );
     unset( $this->database[ 'pages' ][ $slug ] );
     return $this->save();
+  }
+  
+  /**
+   * Tells whether a page exists
+   * @param string $page
+   * @return bool
+   */
+  public function is_page( string $page ): bool {
+    return isset( $this->data( 'pages' )[ $page ] );
   }
   
   /**
@@ -467,9 +481,9 @@ class App {
         'image/gif',
         'image/jpeg',
         'image/png',
-        'image/svg',
         'image/svg+xml',
         'image/vnd.microsoft.icon',
+        'image/webp',
         'image/x-icon',
         'text/css',
         'text/html',
@@ -538,7 +552,7 @@ class App {
   public function uninstall( string $plugin ): bool {
     if ( $this->installed( $plugin ) ) {
       $this->get_action( 'uninstall', $plugin );
-      $index = array_search( $plugin, $this->data()[ 'installed' ] );
+      $index = array_search( $plugin, $this->data( 'installed' ) );
       unset( $this->database[ 'installed' ][ $index ] );
       return $this->save();
     }
@@ -546,12 +560,12 @@ class App {
   }
   
   /**
-   * Check plugin installation
+   * Tells whether a plugin is installed
    * @param string $plugin
    * @return bool
    */
   public function installed( string $plugin ): bool {
-    return in_array( $plugin, $this->data()[ 'installed' ] );
+    return in_array( $plugin, $this->data( 'installed' ) );
   }
   
   /**
@@ -565,16 +579,14 @@ class App {
     $slug = substr( $slug, 0, 50 );
     $slug = strtolower( $slug );
     $slug = trim( $slug, '-' );
-    $pages = $this->data()[ 'pages' ];
+    $pages = $this->data( 'pages' );
     $pages = array_keys( $pages );
     $taken = $this->_l( 'slug_taken', $pages );
     $taken[] = $this->admin_url();
     if ( in_array( $slug, $taken ) || file_exists( $this->root( $slug ) ) ) {
       $slug = ( $slug . '-' . bin2hex( random_bytes(2) ) );
     }
-    if ( empty( $slug ) ) {
-      $slug = bin2hex( random_bytes(2) );
-    }
+    $slug = ( empty( $slug ) ? bin2hex( random_bytes(2) ) : $slug );
     return $this->_( $slug, 'slugify', $title );
   }
   
@@ -627,7 +639,7 @@ class App {
    * @return void
    */
   public function auth( ?string $location = null, bool $post = true ): void {
-    $location = ( $location ?? $this->page );
+    $location ??= $this->page;
     $token = ( $post ? ( $_POST[ 'token' ] ?? '' ) : ( $_GET[ 'token' ] ?? '' ) );
     if ( ! hash_equals( $this->token(), $token ) ) {
       $this->get_action( 'token_error', $token );
@@ -693,11 +705,21 @@ class App {
             <label for="descr" class="ss-label">Description</label>
             <textarea rows="5" id="descr" name="descr" placeholder="Page description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . ( $_POST[ 'descr' ] ?? '' ) . '</textarea>
             <label for="keywords" class="ss-label">Keywords</label>
-            <input type="text" id="keywords" name="keywords" placeholder="Keywords, for, seo" value="' . ( $_POST[ 'keywords' ] ?? '' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+            <input type="text" id="keywords" name="keywords" placeholder="Keywords, for, seo" value="' . $this->esc( $_POST[ 'keywords' ] ?? '' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
             <label for="content" class="ss-label">Content</label>
             <textarea rows="20" id="content" name="content" placeholder="Start writing ✍" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto ss-responsive">' . ( $_POST[ 'content' ] ?? '' ) . '</textarea>
             <label for="permalink" class="ss-label">Permalink</label>
             <input type="text" id="permalink" name="permalink" placeholder="custom/permalink.html" value="' . ( $_POST[ 'permalink' ] ?? '' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+            <label for="tpl" class="ss-label">Template</label>
+            <select id="tpl" name="tpl" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
+              <option value="theme.php">Default</option>';
+          $templates = $this->_l( 'tpl' );
+          foreach ( $templates as $tpl ) {
+            $tpl = $this->esc( $tpl );
+            $layout[ 'content' ] .= '<option value="' . $tpl . '"' . ( ( $_POST[ 'tpl' ] ?? '' ) === $tpl ? ' selected' : '' ) . '>' . $tpl . '</option>';
+          }
+          $layout[ 'content' ] .= '
+            </select>
             <label for="thumb" class="ss-label">Thumbnail</label>
             <select id="thumb" name="thumb" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
               <option value selected>Choose a thumbnail</option>';
@@ -729,11 +751,11 @@ class App {
             unset( $_POST[ 'permalink' ], $_POST[ 'token' ], $_POST[ 'create' ] );
             $taken = $this->_l( 'slug_taken' );
             $taken[] = $this->admin_url();
-            if ( isset( $this->data()[ 'pages' ][ $permalink ] ) || in_array( $permalink, $taken ) ) {
-              $this->alert( 'Page with that permalink already exist.', 'error' );
+            if ( $this->is_page( $permalink ) || in_array( $permalink, $taken ) ) {
+              $this->alert( 'Page with that permalink already exist, try <b>' . $this->slugify( $permalink ) . '</b> instead.', 'error' );
               break;
             } else if ( file_exists( $this->root( $permalink ) ) ) {
-              $this->alert( 'Directory/File with that permalink already exist.', 'error' );
+              $this->alert( 'Directory/File with that permalink already exist, try <b>' . $this->slugify( $permalink ) . '</b> instead.', 'error' );
               break;
             }
             if ( $this->create_page( $permalink, $_POST ) ) {
@@ -752,9 +774,9 @@ class App {
           <form action="' . $this->admin_url( '?page=delete', true ) . '" method="post">
             <label for="pages" class="ss-label">Pages <span class="ss-red">*</span></label>
             <select id="pages" name="pages[]" class="ss-select ss-mobile ss-w-6 ss-mx-auto" multiple required>';
-          foreach ( $this->data()[ 'pages' ] as $slug => $details ) {
-            if ( intval( $slug ) !== 404 ) {
-              $layout[ 'content' ] .= '<option value="' . $this->esc( $slug ) . '">' . $this->esc( $details[ 'title' ] ) . '</option>';
+          foreach ( $this->data( 'pages' ) as $slug => $details ) {
+            if ( intval( $slug ) !== 404 && $slug !== 'home' ) {
+              $layout[ 'content' ] .= '<option value="' . $this->esc( $slug ) . '">' . $this->esc( $details[ 'title' ] . ' (' . $slug . ')' ) . '</option>';
             }
           }
           $layout[ 'content' ] .= '
@@ -781,17 +803,15 @@ class App {
           break;
         case 'update':
           $layout[ 'title' ] = 'Update Page';
-          if ( ! isset( $this->data()[ 'pages' ][ $action ] ) || intval( $action ) === 404 ) {
+          if ( ! $this->is_page( $action ) ) {
             $layout[ 'content' ] = '
             <form action="' . $this->admin_url( abs: true ) . '" method="get">
               <input type="hidden" name="page" value="update">
               <label for="page" class="ss-label">Choose Page <span class="ss-red">*</span></label>
               <select id="page" name="action" class="ss-select ss-mobile ss-w-6 ss-mx-auto" required>
                 <option value selected disabled>Choose page</option>';
-              foreach ( $this->data()[ 'pages' ] as $slug => $details ) {
-                if ( intval( $slug ) !== 404 ) {
-                  $layout[ 'content' ] .= '<option value="' . $this->esc( $slug ) . '">' . $this->esc( $details[ 'title' ] ) . '</option>';
-                }
+              foreach ( $this->data( 'pages' ) as $slug => $details ) {
+                $layout[ 'content' ] .= '<option value="' . $this->esc( $slug ) . '">' . $this->esc( $details[ 'title' ] . ' (' . $slug . ')' ) . '</option>';
               }
               $layout[ 'content' ] .= '
               </select>
@@ -799,7 +819,7 @@ class App {
               <input type="submit" value="Select" class="ss-btn ss-mobile ss-w-5">
             </form>';
           } else {
-            $data = ( empty( $_POST ) ? $this->data()[ 'pages'][ $action ] : $_POST );
+            $data = ( empty( $_POST ) ? $this->data( 'pages' )[ $action ] : $_POST );
             $data[ 'pub' ] = ( $data[ 'pub' ] === 'true' || $data[ 'pub' ] === true ? true : false );
             $layout[ 'content' ] = '
             <form action="' . $this->admin_url( '?page=update&action=' . $action, true ) . '" method="post" enctype="multipart/form-data">
@@ -819,6 +839,16 @@ class App {
               <textarea rows="20" id="content" name="content" placeholder="Start writing ✍" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $data[ 'content' ] . '</textarea>
               <label for="permalink" class="ss-label">Permalink</label>
               <input type="text" id="permalink" name="permalink" placeholder="custom/permalink.html" value="' . $this->esc( $data[ 'permalink' ] ?? $action ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+              <label for="tpl" class="ss-label">Template</label>
+              <select id="tpl" name="tpl" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
+                <option value="theme.php">Default</option>';
+            $templates = $this->_l( 'tpl' );
+            foreach ( $templates as $tpl ) {
+              $tpl = $this->esc( $tpl );
+              $layout[ 'content' ] .= '<option value="' . $tpl . '"' . ( $data[ 'tpl' ] === $tpl ? ' selected' : '' ) . '>' . $tpl . '</option>';
+            }
+            $layout[ 'content' ] .= '
+              </select>
               <label for="thumb" class="ss-label">Thumbnail</label>
               <select id="thumb" name="thumb" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
                 <option value>Choose a thumbnail</option>';
@@ -854,13 +884,14 @@ class App {
             unset( $_POST[ 'permalink' ], $_POST[ 'token' ], $_POST[ 'update' ] );
             $taken = $this->_l( 'slug_taken' );
             $taken[] = $this->admin_url();
-            if ( ( $action !== $update ) && isset( $this->data()[ 'pages' ][ $update ] ) || in_array( $update, $taken ) ) {
-              $this->alert( 'Page with that permalink already exist.', 'error' );
+            if ( ( $action !== $update ) && $this->is_page( $update ) || in_array( $update, $taken ) ) {
+              $this->alert( 'Page with that permalink already exist, try <b>' . $this->slugify( $update ) . '</b> instead.', 'error' );
               break;
             } else if ( file_exists( $this->root( $update ) ) ) {
-              $this->alert( 'Directory/File with the given custom permalink already exist.', 'error' );
+              $this->alert( 'Directory/File with the given custom permalink already exist, try <b>' . $this->slugify( $update ) . '</b> instead.', 'error' );
               break;
             }
+            $update = ( intval( $action ) === 404 || $action === 'home' ? $action : $update );
             if ( $this->update_page( $action, $update, $_POST ) ) {
               $this->get_action( 'update_success', $action );
               $this->alert( 'Page updated successfully' . ( $_POST[ 'pub' ] ? sprintf( ', click <a href="%s" target="_blank" class="ss-dotted">here</a> to preview.', $this->url( $update ) ) : '.' ), 'success' );
@@ -933,7 +964,7 @@ class App {
               <h4 class="ss-monospace ss-responsive">' . ucwords( str_replace( '-', ' ', $plugin ) ) . '</h4>
               <div class="ss-btn-group ss-full ss-my-4">
                 <a href="' . $this->admin_url( '?page=plugins&action=' . ( $this->installed( $plugin ) ? 'uninstall' : 'install' ) . '&plugin=' . $plugin . '&token=' . $this->token(), true ) . '" class="ss-btn ss-w-5">' . ( $this->installed( $plugin ) ? 'Uninstall' : 'Install' ) . '</a>
-                <a ' . ( $this->installed( $plugin ) ? 'href="' . $this->admin_url( '?page=' . $plugin, true ) . '" ' : '' ) . 'class="ss-btn ss-inverted ss-w-5' . ( $this->installed( $plugin ) ? '">' : ' ss-disabled">' ) . 'Configure</a>
+                <a ' . ( $this->installed( $plugin ) ? 'href="' . $this->admin_url( '?page=' . $plugin, true ) . '" ' : '' ) . 'class="ss-btn ss-inverted ss-w-5' . ( $this->installed( $plugin ) ? '' : ' ss-disabled' ) . '">Configure</a>
               </div>
               ' . $this->get_action( 'plugin_list_end', $plugin ) . '
             </li>';
@@ -957,6 +988,40 @@ class App {
               }
               $this->alert( sprintf( 'Plugin <b>%s</b> was not uninstalled, please try again.', ucwords( str_replace( '-', ' ', $plugin ) ) ), 'error' );
               $this->go( $this->admin_url( '?page=plugins' ) );
+            }
+          }
+          break;
+        case 'themes':
+          $layout[ 'title' ] = 'Themes';
+          $layout[ 'content' ] = '
+          <ul class="ss-list ss-fieldset ss-mobile ss-w-6 ss-mx-auto">';
+          foreach ( $this->themes as $theme ) {
+            $layout[ 'content' ] .= '
+            <li class="ss-responsive">
+              ' . $this->get_action( 'theme_list_top', $theme ) . '
+              <h4 class="ss-monospace ss-responsive">' . ucwords( str_replace( '-', ' ', $theme ) ) . '</h4>
+              <div class="ss-btn-group ss-full ss-my-4">
+                <a ' . ( $this->get( 'theme' ) === $theme ? '' : 'href="' . $this->admin_url( '?page=themes&action=activate&theme=' . $theme . '&token=' . $this->token(), true ) . '" ' ) . 'class="ss-btn ss-w-5' . ( $this->get( 'theme' ) === $theme ? ' ss-disabled' : '' ) . '">Activate</a>
+                <a ' . ( $this->get( 'theme' ) === $theme ? 'href="' . $this->admin_url( '?page=' . $theme, true ) . '" ' : '' ) . 'class="ss-btn ss-inverted ss-w-5' . ( $this->get( 'theme' ) === $theme ? '' : ' ss-disabled' ) . '">Configure</a>
+              </div>
+              ' . $this->get_action( 'theme_list_end', $theme ) . '
+            </li>';
+          }
+          $layout[ 'content' ] .= '</ul>';
+          if ( isset( $_GET[ 'theme' ] ) ) {
+            $this->auth( post: false );
+            $this->get_action( 'on_theme' );
+            $theme = ( $_GET[ 'theme' ] ?? '' );
+            if ( $action === 'activate' ) {
+              if ( in_array( $theme, $this->themes ) ) {
+                if ( $this->set( $theme, 'theme' ) ) {
+                  $this->get_action( 'change_theme', $theme );
+                  $this->alert( sprintf( 'Theme <b>%s</b> has been activated successfully.', $theme ), 'success' );
+                  $this->go( $this->admin_url( '?page=themes' ) );
+                }
+              }
+              $this->alert( 'Failed to update theme, please try again.', 'error' );
+              $this->go( $this->admin_url( '?page=themes' ) );
             }
           }
           break;
@@ -984,16 +1049,14 @@ class App {
             <input type="email" id="email" name="email" placeholder="mail@example.com" value="' . $this->get( 'email' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
             <label for="username" class="ss-label">Username <span class="ss-red">*</span></label>
             <input type="text" id="username" name="username" placeholder="John Doe" value="' . $this->esc( $this->get( 'username' ) ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
-            <label for="url" class="ss-label">Site URI <span class="ss-red">*</span></label>
+            <label for="url" class="ss-label">Site URL <span class="ss-red">*</span></label>
             <input type="url" id="url" name="url" placeholder="' . $this->get( 'url' ) . '" value="' . $this->get( 'url' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
-            <label for="admin" class="ss-label">Admin URI <span class="ss-red">*</span></label>
+            <label for="admin" class="ss-label">Admin URL <span class="ss-red">*</span></label>
             <input type="text" id="admin" name="admin" placeholder="example/' . bin2hex( random_bytes(3) ) . '/admin" value="' . $this->esc( $this->admin_url() ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
-            <label for="theme" class="ss-label">Theme</label>
-            <select id="theme" name="theme" class="ss-select ss-mobile ss-w-6 ss-mx-auto">';
-          foreach ( $this->themes as $theme ) {
-            $layout[ 'content' ] .= '<option value="' . $theme . '"' . ( $this->get( 'theme' ) === $theme ? ' selected' : '' ) . '>' . ucwords( str_replace( '-', ' ', $theme ) ) . '</option>';
-          }
-          $layout[ 'content' ] .= '
+            <label for="blog" class="ss-label">Enable Blog</label>
+            <select id="blog" name="blog" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
+              <option value="true"' . ( $this->get( 'blog' ) ? ' selected' : '' ) . '>Yes</option>
+              <option value="false"' . ( $this->get( 'blog' ) ? '' : ' selected' ) . '>No</option>
             </select>
             <label for="footer" class="ss-label">Footer</label>
             <textarea rows="5" id="footer" name="footer" placeholder="' . sprintf( 'Copyright &copy; %d', date( 'Y' ) ) . '" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->get( 'footer' ) . '</textarea>
@@ -1020,14 +1083,14 @@ class App {
             $_POST[ 'email' ] = filter_input( INPUT_POST, 'email', FILTER_SANITIZE_EMAIL );
             $_POST[ 'url' ] = rtrim( filter_input( INPUT_POST, 'url', FILTER_SANITIZE_URL ), './?&#' ) . '/';
             $_POST[ 'admin' ] = $this->esc_slug( $_POST[ 'admin' ] );
+            $_POST[ 'blog' ] = filter_input( INPUT_POST, 'blog', FILTER_VALIDATE_BOOL );
             if ( file_exists( $this->root( $_POST[ 'admin' ] ) ) ) {
               $this->alert( 'Directory/File with the given custom admin url already exist.', 'error' );
               $this->go( $this->admin_url( '?page=settings' ) );
             }
             $data = $this->data();
             unset( $_POST[ 'token' ], $_POST[ 'save' ] );
-            $this->get_action( 'change_theme', $_POST[ 'theme' ] );
-            $data[ 'site' ] = array_merge( $this->data()[ 'site' ], $_POST );
+            $data[ 'site' ] = array_merge( $this->data( 'site' ), $_POST );
             if ( $this->save( $data ) ) {
               $this->database = $data;
               $this->get_action( 'settings_success' );
@@ -1043,29 +1106,33 @@ class App {
             $old_pass = ( $_POST[ 'old' ] ?? '' );
             $new_pass = ( $_POST[ 'new' ] ?? '' );
             $confirm = ( $_POST[ 'confirm' ] ?? '' );
-            if ( password_verify( $old_pass, $this->get( 'password' ) ) ) {
-              if ( hash_equals( $new_pass, $confirm ) ) {
-                if ( strlen( $new_pass ) >= 8 ) {
-                  $this->set( password_hash( $new_pass, PASSWORD_DEFAULT ), 'password' );
-                  $this->get_action( 'password_success' );
-                  $this->alert( 'Password updated, please re-login.', 'success' );
-                  unset( $_SESSION[ 'logged_in' ] );
-                  $this->go( $this->admin_url() );
-                }
-                $this->alert( 'Password must be at least 8 characters or longer.', 'error' );
-                $this->go( $this->admin_url( '?page=settings' ) );
-              }
+            if ( ! password_verify( $old_pass, $this->get( 'password' ) ) ) {
+              $this->get_action( 'password_error' );
+              $this->alert( 'Incorrect password, please try again.', 'error' );
+              $this->go( $this->admin_url( '?page=settings' ) );
+            } else if ( ! hash_equals( $new_pass, $confirm ) ) {
               $this->alert( 'Passwords does not match, please try again.', 'error' );
               $this->go( $this->admin_url( '?page=settings' ) );
+            } else if ( 8 > strlen( $new_pass ) ) {
+              $this->alert( 'Password must be at least 8 characters or longer.', 'error' );
+              $this->go( $this->admin_url( '?page=settings' ) );
+            } else {
+              $hash = password_hash( $new_pass, PASSWORD_DEFAULT );
+              if ( $this->set( $hash, 'password' ) ) {
+                $this->get_action( 'password_success' );
+                $this->alert( 'Password updated, please login again.', 'success' );
+                $this->log( 'Password has been changed.' );
+                unset( $_SESSION[ 'logged_in' ] );
+              } else {
+                $this->alert( 'Failed to change password, please try again.', 'error' );
+              }
+              $this->go( $this->admin_url() );
             }
-            $this->get_action( 'password_error' );
-            $this->alert( 'Incorrect password, please try again.', 'error' );
-            $this->go( $this->admin_url( '?page=settings' ) );
           }
           break;
         default:
           $page = 'dashboard';
-          $list = $this->data()[ 'pages' ];
+          $list = $this->data( 'pages' );
           $last = array_key_last( $list );
           $layout[ 'title' ] = 'Dashboard';
           $layout[ 'content' ] = '
@@ -1101,13 +1168,24 @@ class App {
         break;
       case $this->_( '', 'index' ):
         $this->get_action( 'home' );
-        require_once $this->theme( 'home.php' );
+        if ( $this->get( 'blog' ) ) {
+          require_once $this->theme( 'blog.php' );
+          break;
+        }
+        $this->page = 'home';
+        $tpl = $this->theme( $this->page( 'tpl' ) );
+        if ( is_file( $tpl ) ) {
+          require_once $tpl;
+          break;
+        }
+        require_once $this->theme( 'theme.php' );
         break;
       case $this->page( 'pub' ):
         $type = $this->page( 'type' );
         $this->get_action( $type . '_type' );
-        if ( file_exists( $this->theme( $type . '.php' ) ) ) {
-          require_once $this->theme( $type . '.php' );
+        $tpl = $this->theme( $this->page( 'tpl' ) );
+        if ( is_file( $tpl ) ) {
+          require_once $tpl;
           break;
         }
         require_once $this->theme( 'theme.php' );
@@ -1117,6 +1195,10 @@ class App {
         $this->page = '404';
         http_response_code(404);
         $this->get_action( '404', $page );
+        $tpl = $this->theme( $this->page( 'tpl' ) );
+        if ( is_file( $tpl ) ) {
+          require_once $tpl;
+        }
         require_once $this->theme( 'theme.php' );
         break;
     }

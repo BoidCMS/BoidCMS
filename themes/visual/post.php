@@ -1,7 +1,7 @@
-<?php include ( __DIR__ . '/head.php' ) ?>
+<?php include ( __DIR__ . '/header.php' ) ?>
   <?= $App->get_action( 'post_top' ) ?>
   <?php if ( ! empty( $App->page( 'thumb' ) ) ): ?>
-  <img src="<?= $App->url( 'media/' . $App->page( 'thumb' ) ) ?>" alt="<?= $App->page( 'thumb' ) ?>" loading="lazy" class="ss-card-5 ss-full ss-round-xxlarge ss-mb-7">
+  <img src="<?= $App->url( 'media/' . $App->page( 'thumb' ) ) ?>" alt="<?= $App->page( 'thumb' ) ?>" width="100" height="100" class="ss-card-5 ss-full ss-round-xxlarge ss-mb-7">
   <?php endif ?>
   <h1 class="subtitle ss-center ss-mb-7"><?= $App->esc( $App->page( 'title' ) ) ?></h1>
   <?= $App->get_action( 'site_under_title' ) ?>
