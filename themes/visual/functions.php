@@ -6,15 +6,15 @@
  * @package BoidCMS
  * @subpackage Visual
  * @author Shoaiyb Sysa
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 global $App;
 $App->set_action( 'render', 'vsl_init' );
 $App->set_action( 'change_theme', 'vsl_shut' );
-$App->set_action( 'admin_nav', 'vsl_admin_nav' );
 $App->set_action( 'editable_pages', 'vsl_editable' );
 $App->set_action( 'admin', 'vsl_admin' );
+$App->set_action( 'tpl', 'vsl_tpl' );
 
 /**
  * Initiate Visual, first time install
@@ -59,12 +59,11 @@ function vsl_shut( string $theme ): void {
 }
 
 /**
- * Show link in admin nav bar
+ * Custom templates
  * @return string
  */
-function vsl_admin_nav(): string {
-  global $App, $page;
-  return '<a href="' . $App->admin_url( '?page=visual', true ) . '" class="ss-btn ss-inverted ss-bd-none ss-white' . ( $page === 'visual' ? ' ss-dotted' : '' ) . '">Visual</a>';
+function vsl_tpl(): string {
+  return ',post.php,';
 }
 
 /**
@@ -76,17 +75,29 @@ function vsl_editable(): string {
 }
 
 /**
+ * Check if is homepage
+ * @return bool
+ */
+function vsl_is_home(): bool {
+  global $App;
+  if ( ! $App->get( 'blog' ) ) {
+    return ( $App->page === 'home' );
+  }
+  return ( $App->page === $App->_( '', 'index' ) );
+}
+
+/**
  * Site and page title
  * @return string
  */
 function vsl_title(): string {
   global $App;
-  $title = vsl_site_page( 'title' );
-  if ( $App->page === $App->_( '', 'index' ) ) {
-    return ( 'Home – ' . $title );
-  }
   $site = $App->esc( $App->get( 'title' ) );
-  return ( $title . ' – ' . $site );
+  $page = $App->esc( $App->page( 'title' ) );
+  if ( empty( $page ) ) {
+    return $site;
+  }
+  return ( $page . ' &ndash; ' . $site );
 }
 
 /**
@@ -97,8 +108,7 @@ function vsl_site_page( string $index ): string {
   global $App;
   $site = $App->get( $index );
   $page = $App->page( $index );
-  $home = $App->_( '', 'index' );
-  if ( $home === $App->page ) {
+  if ( vsl_is_home() ) {
     return $App->esc( $site );
   }
   return $App->esc( $page );
@@ -160,6 +170,7 @@ function vsl_admin(): void {
   global $App, $layout, $page;
   switch ( $page ) {
     case 'visual':
+      $menu = $App->get( 'vsl' )[ 'menu' ];
       $layout[ 'title' ] = 'Visual';
       $layout[ 'content' ] = '
       <form action="' . $App->admin_url( '?page=visual', true ) . '" method="post">
@@ -167,25 +178,24 @@ function vsl_admin(): void {
           <legend class="ss-legend">Menu</legend>
           <p class="ss-alert ss-info">Leave the text input empty to disable the link from showing up in menu.</p>
           <label for="menu_1_text" class="ss-label">Menu 1 Text</label>
-          <input type="text" id="menu_1_text" name="menu[0][text]" value="' . $App->get( 'vsl' )[ 'menu' ][0][ 'text' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+          <input type="text" id="menu_1_text" name="menu[0][text]" value="' . $App->esc( $menu[0][ 'text' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
           <label for="menu_1_link" class="ss-label">Menu 1 Link</label>
-          <input type="text" id="menu_1_link" name="menu[0][link]" value="' . $App->get( 'vsl' )[ 'menu' ][0][ 'link' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+          <input type="text" id="menu_1_link" name="menu[0][link]" value="' . $App->esc( $menu[0][ 'link' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
           <hr class="ss-hr">
           <label for="menu_2_text" class="ss-label">Menu 2 Text</label>
-          <input type="text" id="menu_2_text" name="menu[1][text]" value="' . $App->get( 'vsl' )[ 'menu' ][1][ 'text' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+          <input type="text" id="menu_2_text" name="menu[1][text]" value="' . $App->esc( $menu[1][ 'text' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
           <label for="menu_2_link" class="ss-label">Menu 2 Link</label>
-          <input type="text" id="menu_2_link" name="menu[1][link]" value="' . $App->get( 'vsl' )[ 'menu' ][1][ 'link' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+          <input type="text" id="menu_2_link" name="menu[1][link]" value="' . $App->esc( $menu[1][ 'link' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
           <hr class="ss-hr">
           <label for="menu_3_text" class="ss-label">Menu 3 Text</label>
-          <input type="text" id="menu_3_text" name="menu[2][text]" value="' . $App->get( 'vsl' )[ 'menu' ][2][ 'text' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+          <input type="text" id="menu_3_text" name="menu[2][text]" value="' . $App->esc( $menu[2][ 'text' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
           <label for="menu_3_link" class="ss-label">Menu 3 Link</label>
-          <input type="text" id="menu_3_link" name="menu[2][link]" value="' . $App->get( 'vsl' )[ 'menu' ][2][ 'link' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+          <input type="text" id="menu_3_link" name="menu[2][link]" value="' . $App->esc( $menu[2][ 'link' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
         </fieldset>
         <label for="per" class="ss-label">Posts Per Page</label>
         <input type="number" id="per" name="per" value="' . $App->get( 'vsl' )[ 'per' ] . '" min="1" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
         <label for="content" class="ss-label">Top Header Text</label>
         <textarea rows="10" id="content" name="top" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto" required>' . $App->get( 'vsl' )[ 'top' ] . '</textarea>
-        ' . $App->get_action( 'form' ) . '
         <input type="hidden" name="token" value="' . $App->token() . '">
         <input type="submit" name="save" value="Save" class="ss-btn ss-mobile ss-w-5">
       </form>';
