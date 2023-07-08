@@ -7,11 +7,12 @@
  * @link https://www.wondercms.com
  *
  * @package BoidCMS
- * @author Shoaiyb Sysa
+ * @author Shuaib Yusuf Shuaib
  * @link https://boidcms.github.io
- * @version 2.0.0
+ * @version 2.0.1
  * @licence MIT
  */
+#[AllowDynamicProperties]
 class App {
   /**
    * Current working directory
@@ -82,7 +83,7 @@ class App {
       file_put_contents( $this->root( 'data/database.json' ), $json, LOCK_EX );
     }
     $this->actions = array();
-    $this->version = '2.0.0';
+    $this->version = '2.0.1';
     $this->logged_in = ( isset( $_SESSION[ 'logged_in' ], $_SESSION[ 'root' ] ) && $this->root === $_SESSION[ 'root' ] );
     $this->database = json_decode( file_get_contents( $this->root( 'data/database.json' ) ), true );
     $this->plugins = array_map( 'basename', glob( $this->root( 'plugins/*' ), GLOB_ONLYDIR ) );
@@ -94,28 +95,28 @@ class App {
   /**
    * Filter value
    * @param mixed $value
-   * @param string $callback
+   * @param string $action
    * @param mixed ...$args
    * @return mixed
    */
-  public function _( mixed $value, string $callback = 'default', mixed ...$args ): mixed {
-    return $this->get_filter( $value, $callback, ...$args );
+  public function _( mixed $value, string $action = 'default', mixed ...$args ): mixed {
+    return $this->get_filter( $value, $action, ...$args );
   }
   
   /**
    * Array custom list filter
-   * @param string $callback
+   * @param string $action
    * @param array $custom
    * @return array
    */
-  public function _l( string $callback, array $custom = array() ): array {
-    $option = $this->get_action( $callback );
-    $option =              ( $option ?? '' );
-    $option =        explode( ',', $option );
-    $option =   array_map( 'trim', $option );
-    $option =        array_filter( $option );
-    $option =        array_unique( $option );
-    return   array_merge( $option, $custom );
+  public function _l( string $action, array $custom = array() ): array {
+    $option = $this->get_action( $action );
+    $option =            ( $option ?? '' );
+    $option =      explode( ',', $option );
+    $option = array_map( 'trim', $option );
+    $option =      array_filter( $option );
+    $option =      array_unique( $option );
+    return array_merge( $option, $custom );
   }
   
   /**
@@ -125,8 +126,11 @@ class App {
    * @return bool
    */
   public function log( string $message, string $type = 'debug' ): bool {
+    $type = addslashes( $type );
+    $message = addslashes( $message );
+    $page = addslashes( $this->page );
     $this->get_action( 'log', $message, $type );
-    $msg = sprintf( '[%s] [%d "%s"] : [%s] - %s', date( 'c' ), http_response_code(), $this->page, strtoupper( $type ), $message . PHP_EOL );
+    $msg = sprintf( '[%s] [%d "%s"] : [%s] - %s', date( 'c' ), http_response_code(), $page, strtoupper( $type ), $message . PHP_EOL );
     return error_log( $msg, 3, $this->root( 'data/debug.log' ) );
   }
   
@@ -166,7 +170,7 @@ class App {
    * @return string
    */
   public function url( string $location = '' ): string {
-    return $this->_( $this->get( 'url' ) . $location, 'url', $location );
+    return $this->get_filter( $this->get( 'url' ) . $location, 'url', $location );
   }
   
   /**
@@ -225,8 +229,8 @@ class App {
    */
   public function data( ?string $index = null ): array {
     $data = $this->database;
-    if ( ! is_null( $index ) ) {
-      return ( $data[ $index ] ?? null );
+    if ( null !== $index ) {
+      return ( $data[ $index ] ?? array() );
     }
     return $data;
   }
@@ -268,7 +272,7 @@ class App {
   }
   
   /**
-   * Call all callback functions from the given action
+   * Trigger an action
    * @param string $action
    * @param mixed ...$args
    * @return mixed
@@ -316,14 +320,10 @@ class App {
   public function load_actions(): void {
     foreach ( $this->data( 'installed' ) as $plugin ) {
       $plugin = $this->root( 'plugins/' . $plugin . '/plugin.php' );
-      if ( is_file( $plugin ) ) {
-        include_once ( $plugin );
-      }
+      if ( is_file( $plugin ) ) include_once ( $plugin );
     }
     $functions = $this->theme( 'functions.php' );
-    if ( is_file( $functions ) ) {
-      include_once ( $functions );
-    }
+    if ( is_file( $functions ) ) include_once ( $functions );
   }
   
   /**
@@ -364,19 +364,20 @@ class App {
   /**
    * Get page field value
    * @param string $index
-   * @param ?string $page
+   * @param ?string $slug
    * @return mixed
    */
-  public function page( string $index, ?string $page = null ): mixed {
-    $page ??= $this->page;
-    if ( $this->is_page( $page ) ) {
-      $data = $this->data( 'pages' )[ $page ];
-      if ( isset( $data[ $index ] ) ) {
-        $args = array( $index, $page, $data );
-        return $this->_( $data[ $index ], 'page', ...$args );
+  public function page( string $index, ?string $slug = null ): mixed {
+    $slug ??= $this->page;
+    if ( $this->is_page( $slug ) ) {
+      $page = $this->data( 'pages' )[ $slug ];
+      if ( isset( $page[ $index ] ) ) {
+        $value = $page[ $index ];
+        $args = array( $index, $slug, $page );
+        return $this->get_filter( $value, 'page', ...$args );
       }
     }
-    return $this->_( null, 'page', $index, $page, array() );
+    return $this->get_filter( null, 'page', $index, $slug, array() );
   }
   
   /**
@@ -420,11 +421,11 @@ class App {
   
   /**
    * Tells whether a page exists
-   * @param string $page
+   * @param string $slug
    * @return bool
    */
-  public function is_page( string $page ): bool {
-    return isset( $this->data( 'pages' )[ $page ] );
+  public function is_page( string $slug ): bool {
+    return isset( $this->data( 'pages' )[ $slug ] );
   }
   
   /**
@@ -478,6 +479,7 @@ class App {
         'application/zip',
         'audio/mp4',
         'audio/mpeg',
+        'image/avif',
         'image/gif',
         'image/jpeg',
         'image/png',
@@ -569,12 +571,12 @@ class App {
   }
   
   /**
-   * Slugify page title
-   * @param string $title
+   * Slugify text
+   * @param string $text
    * @return string
    */
-  public function slugify( string $title ): string {
-    $slug = preg_replace( '/[^\\pL\d]+/u', '-', $title );
+  public function slugify( string $text ): string {
+    $slug = preg_replace( '/[^\\pL\d]+/u', '-', $text );
     $slug = preg_replace( '/[^-\w]+/', '', $slug );
     $slug = substr( $slug, 0, 50 );
     $slug = strtolower( $slug );
@@ -587,7 +589,7 @@ class App {
       $slug = ( $slug . '-' . bin2hex( random_bytes(2) ) );
     }
     $slug = ( empty( $slug ) ? bin2hex( random_bytes(2) ) : $slug );
-    return $this->_( $slug, 'slugify', $title );
+    return $this->_( $slug, 'slugify', $text );
   }
   
   /**
@@ -621,11 +623,14 @@ class App {
   
   /**
    * Sanitize text
-   * @param ?string $text
+   * @param string|array|null $text
    * @param bool $trim
    * @return string
    */
-  public function esc( ?string $text, bool $trim = true ): string {
+  public function esc( string | array | null $text, bool $trim = true ): string {
+    if ( is_array( $text ) ) {
+      $text = null;
+    }
     $text ??= '';
     $text = stripslashes( $text );
     $text = htmlspecialchars( $text );
@@ -703,13 +708,13 @@ class App {
             <label for="title" class="ss-label">Title <span class="ss-red">*</span></label>
             <input type="text" id="title" name="title" placeholder="Page title" value="' . $this->esc( $_POST[ 'title' ] ?? '' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
             <label for="descr" class="ss-label">Description</label>
-            <textarea rows="5" id="descr" name="descr" placeholder="Page description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . ( $_POST[ 'descr' ] ?? '' ) . '</textarea>
+            <textarea rows="5" id="descr" name="descr" placeholder="Page description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $_POST[ 'descr' ] ?? '' ) . '</textarea>
             <label for="keywords" class="ss-label">Keywords</label>
             <input type="text" id="keywords" name="keywords" placeholder="Keywords, for, seo" value="' . $this->esc( $_POST[ 'keywords' ] ?? '' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
             <label for="content" class="ss-label">Content</label>
-            <textarea rows="20" id="content" name="content" placeholder="Start writing ✍" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto ss-responsive">' . ( $_POST[ 'content' ] ?? '' ) . '</textarea>
+            <textarea rows="20" id="content" name="content" placeholder="Start writing ✍" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto ss-responsive">' . $this->esc( $_POST[ 'content' ] ?? '' ) . '</textarea>
             <label for="permalink" class="ss-label">Permalink</label>
-            <input type="text" id="permalink" name="permalink" placeholder="custom/permalink.html" value="' . ( $_POST[ 'permalink' ] ?? '' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+            <input type="text" id="permalink" name="permalink" placeholder="custom/permalink.html" value="' . $this->esc( $_POST[ 'permalink' ] ?? '' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
             <label for="tpl" class="ss-label">Template</label>
             <select id="tpl" name="tpl" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
               <option value="theme.php">Default</option>';
@@ -725,7 +730,7 @@ class App {
               <option value selected>Choose a thumbnail</option>';
           foreach ( $this->medias as $media ) {
             $ext = pathinfo( $media, PATHINFO_EXTENSION );
-            $extensions = $this->_l( 'thumb_ext', array( 'gif', 'jpeg', 'jpg', 'png', 'webp' ) );
+            $extensions = $this->_l( 'thumb_ext', array( 'avif', 'gif', 'jpeg', 'jpg', 'png', 'webp' ) );
             if ( in_array( $ext, $extensions ) ) {
               $layout[ 'content' ] .= '<option value="' . $media . '"' . ( ( $_POST[ 'thumb' ] ?? '' ) === $media ? ' selected' : '' ) . '>' . $media . '</option>';
             }
@@ -733,14 +738,14 @@ class App {
           $layout[ 'content' ] .= '
             </select>
             <label for="date" class="ss-label">Date <span class="ss-red">*</span></label>
-            <input type="datetime-local" id="date" name="date" step="any" value="' . ( $_POST[ 'date' ] ?? '' ) . '" class="ss-select ss-mobile ss-w-6 ss-mx-auto" required>
+            <input type="datetime-local" id="date" name="date" step="any" value="' . $this->esc( $_POST[ 'date' ] ?? '' ) . '" class="ss-select ss-mobile ss-w-6 ss-mx-auto" required>
             <label for="pub" class="ss-label">Publish</label>
             <select id="pub" name="pub" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
               <option value="true"' . ( ( $_POST[ 'pub' ] ?? '' ) === 'true' ? ' selected' : '' ) . '>Yes</option>
               <option value="false"' . ( ( $_POST[ 'pub' ] ?? '' ) === 'false' ? ' selected' : '' ) . '>No</option>
             </select>
             ' . $this->get_action( 'form' ) . '
-            <input type="hidden" name="token" value="' . ( $_POST[ 'token' ] ?? $this->token() ) . '">
+            <input type="hidden" name="token" value="' . $this->esc( $_POST[ 'token' ] ?? $this->token() ) . '">
             <input type="submit" name="create" value="Create" class="ss-btn ss-mobile ss-w-5">
           </form>';
           if ( isset( $_POST[ 'create' ] ) ) {
@@ -832,11 +837,11 @@ class App {
               <label for="title" class="ss-label">Title <span class="ss-red">*</span></label>
               <input type="text" id="title" name="title" placeholder="Page title" value="' . $this->esc( $data[ 'title' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
               <label for="descr" class="ss-label">Description</label>
-              <textarea rows="5" id="descr" name="descr" placeholder="Page description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $data[ 'descr' ] . '</textarea>
+              <textarea rows="5" id="descr" name="descr" placeholder="Page description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $data[ 'descr' ] ) . '</textarea>
               <label for="keywords" class="ss-label">Keywords</label>
               <input type="text" id="keywords" name="keywords" placeholder="Keywords, for, seo" value="' . $this->esc( $data[ 'keywords' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
               <label for="content" class="ss-label">Content</label>
-              <textarea rows="20" id="content" name="content" placeholder="Start writing ✍" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $data[ 'content' ] . '</textarea>
+              <textarea rows="20" id="content" name="content" placeholder="Start writing ✍" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $data[ 'content' ] ) . '</textarea>
               <label for="permalink" class="ss-label">Permalink</label>
               <input type="text" id="permalink" name="permalink" placeholder="custom/permalink.html" value="' . $this->esc( $data[ 'permalink' ] ?? $action ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
               <label for="tpl" class="ss-label">Template</label>
@@ -854,7 +859,7 @@ class App {
                 <option value>Choose a thumbnail</option>';
             foreach ( $this->medias as $media ) {
               $ext = pathinfo( $media, PATHINFO_EXTENSION );
-              $extensions = $this->_l( 'thumb_ext', array( 'gif', 'jpg', 'jpeg', 'png', 'webp' ) );
+              $extensions = $this->_l( 'thumb_ext', array( 'avif', 'gif', 'jpg', 'jpeg', 'png', 'webp' ) );
               if ( in_array( $ext, $extensions ) ) {
                 $layout[ 'content' ] .= '<option value="' . $media . '"' . ( $media === $data[ 'thumb' ] ? ' selected' : '' ) . '>' . $media . '</option>';
               }
@@ -862,7 +867,7 @@ class App {
             $layout[ 'content' ] .= '
               </select>
               <label for="date" class="ss-label">Date <span class="ss-red">*</span></label>
-              <input type="datetime-local" id="date" name="date" step="any" value="' . $data[ 'date' ] . '" class="ss-select ss-mobile ss-w-6 ss-mx-auto" required>
+              <input type="datetime-local" id="date" name="date" step="any" value="' . $this->esc( $data[ 'date' ] ) . '" class="ss-select ss-mobile ss-w-6 ss-mx-auto" required>
               <label for="pub" class="ss-label">Publish</label>
               <select id="pub" name="pub" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
                 <option value="true"' . ( $data[ 'pub' ] ? ' selected' : '' ) . '>Yes</option>
@@ -1016,7 +1021,7 @@ class App {
               if ( in_array( $theme, $this->themes ) ) {
                 if ( $this->set( $theme, 'theme' ) ) {
                   $this->get_action( 'change_theme', $theme );
-                  $this->alert( sprintf( 'Theme <b>%s</b> has been activated successfully.', $theme ), 'success' );
+                  $this->alert( sprintf( 'Theme <b>%s</b> has been activated successfully.', ucwords( str_replace( '-', ' ', $theme ) ) ), 'success' );
                   $this->go( $this->admin_url( '?page=themes' ) );
                 }
               }
@@ -1044,13 +1049,13 @@ class App {
             <label for="keywords" class="ss-label">Keywords</label>
             <input type="text" id="keywords" name="keywords" placeholder="Keywords, for, seo" value="' . $this->esc( $this->get( 'keywords' ) ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
             <label for="descr" class="ss-label">Description</label>
-            <textarea rows="10" id="descr" name="descr" placeholder="Site description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->get( 'descr' ) . '</textarea>
+            <textarea rows="10" id="descr" name="descr" placeholder="Site description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $this->get( 'descr' ) ) . '</textarea>
             <label for="email" class="ss-label">Email</label>
-            <input type="email" id="email" name="email" placeholder="mail@example.com" value="' . $this->get( 'email' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+            <input type="email" id="email" name="email" placeholder="mail@example.com" value="' . $this->esc( $this->get( 'email' ) ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
             <label for="username" class="ss-label">Username <span class="ss-red">*</span></label>
             <input type="text" id="username" name="username" placeholder="John Doe" value="' . $this->esc( $this->get( 'username' ) ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
             <label for="url" class="ss-label">Site URL <span class="ss-red">*</span></label>
-            <input type="url" id="url" name="url" placeholder="' . $this->get( 'url' ) . '" value="' . $this->get( 'url' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
+            <input type="url" id="url" name="url" placeholder="' . $this->get( 'url' ) . '" value="' . $this->esc( $this->get( 'url' ) ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
             <label for="admin" class="ss-label">Admin URL <span class="ss-red">*</span></label>
             <input type="text" id="admin" name="admin" placeholder="example/' . bin2hex( random_bytes(3) ) . '/admin" value="' . $this->esc( $this->admin_url() ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
             <label for="blog" class="ss-label">Enable Blog</label>
@@ -1059,7 +1064,7 @@ class App {
               <option value="false"' . ( $this->get( 'blog' ) ? '' : ' selected' ) . '>No</option>
             </select>
             <label for="footer" class="ss-label">Footer</label>
-            <textarea rows="5" id="footer" name="footer" placeholder="' . sprintf( 'Copyright &copy; %d', date( 'Y' ) ) . '" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->get( 'footer' ) . '</textarea>
+            <textarea rows="5" id="footer" name="footer" placeholder="' . sprintf( 'Copyright &copy; %d', date( 'Y' ) ) . '" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $this->get( 'footer' ) ) . '</textarea>
             ' . $this->get_action( 'form' ) . '
             <input type="hidden" name="token" value="' . $this->token() . '">
             <input type="submit" name="save" value="Save changes" class="ss-btn ss-mobile ss-w-5">

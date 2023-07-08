@@ -17,7 +17,7 @@
     <?php if ( $App->logged_in ): ?>
       <div class="ss-top ss-responsive ss-bg-cyan ss-py-5">
         <div class="ss-btn-group ss-nowrap ss-container">
-          <a href="<?= $App->url() ?>" target="_blank" class="ss-btn ss-inverted ss-bd-none ss-white">Preview</a>
+          <a href="<?= $App->url() ?>" target="_blank" class="ss-btn ss-inverted ss-bd-none ss-white">Live</a>
           <a href="<?= $App->admin_url( abs: true ) ?>" class="ss-btn ss-inverted ss-bd-none ss-white<?= ( ( $page === 'dashboard' ) ? ' ss-dotted' : '' ) ?>">Dashboard</a>
           <a href="<?= $App->admin_url( '?page=settings', true ) ?>" class="ss-btn ss-inverted ss-bd-none ss-white<?= ( $page === 'settings' ? ' ss-dotted' : '' ) ?>">Settings</a>
           <a href="<?= $App->admin_url( '?page=create', true ) ?>" class="ss-btn ss-inverted ss-bd-none ss-white<?= ( $page === 'create' ? ' ss-dotted' : '' ) ?>">Create</a>

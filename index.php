@@ -7,9 +7,9 @@
  * @link https://www.wondercms.com
  *
  * @package BoidCMS
- * @author Shoaiyb Sysa
+ * @author Shuaib Yusuf Shuaib
  * @link https://boidcms.github.io
- * @version 2.0.0
+ * @version 2.0.1
  * @licence MIT
  */
 session_start();
