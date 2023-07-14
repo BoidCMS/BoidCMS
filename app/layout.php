@@ -7,12 +7,12 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="generator" content="BoidCMS">
     <meta name="theme-color" content="#00bcd4">
-    <title><?= $layout[ 'title' ] ?> &ndash; BoidCMS</title>
+    <title><?= $layout[ 'title' ] ?> &mdash; BoidCMS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sysacss@0.1.0/sysa.min.css">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNjQwIj48cGF0aCBmaWxsPSIjMDBiY2Q0IiBkPSJNMzIwIDExYTMwOSAzMDkgMCAxIDEgMCA2MTggMzA5IDMwOSAwIDAgMSAwLTYxOHoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNDcxIDM1MHYtMjJoLTQ1di0yM2gyM3YtMjNoMjJ2LTkxaC0yMnYtMjJoLTIzdi0yM0gxNDZ2NjhoMjN2MjIwaC0yM3Y2MGgzMDN2LTIzaDIydi0yMmgyM3YtOTloLTIzem0tNzUgNjFoLTIzdjIzSDI0NHYtNjloMTI5djIzaDIzdjIzem0wLTE1OWgtMjN2MjNIMjQ0di02OWgxMjl2MjNoMjN2MjN6Ii8+PC9zdmc+Cg==">
     <?= $App->get_action( 'admin_head' ) ?>
   </head>
-  <body class="ss-monospace ss-center ss-white ss-h-10">
+  <body class="ss-monospace ss-center ss-h-10">
     <?= $App->get_action( 'admin_top' ) ?>
     <?php if ( $App->logged_in ): ?>
       <div class="ss-top ss-responsive ss-bg-cyan ss-py-5">
@@ -31,7 +31,7 @@
         </div>
       </div>
     <?php endif ?>
-    <div class="ss-container ss-black ss-py-7">
+    <div class="ss-container ss-py-7">
       <?php $App->alerts() ?>
       <?= $App->get_action( 'admin_middle' ) ?>
       <?= $App->get_action( $page . '_top' ) ?>
@@ -44,7 +44,7 @@
       <?= $App->get_action( $page . '_end' ) ?>
     </div>
     <?php if ( $App->logged_in ): ?>
-      <div class="ss-bottom ss-bg-cyan ss-py-7" style="position:sticky;top:100vh">
+      <div class="ss-bottom ss-bg-cyan ss-white ss-py-7" style="position:sticky;top:100vh">
         <?= $App->get_action( 'admin_footer' ) ?>
         <p><small><a href="https://boidcms.github.io" target="_blank" class="ss-dotted">Documentation</a> &bull; <a href="https://github.com/BoidCMS/BoidCMS/discussions" target="_blank" class="ss-dotted">Discussions</a></small></p>
         <p class="ss-large">Powered by <a href="https://boidcms.github.io" target="_blank" class="ss-dotted">BoidCMS</a> <sub>v<?= $App->version ?></sub></p>

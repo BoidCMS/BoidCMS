@@ -461,13 +461,11 @@ class App {
     $type = $finfo->file( $tmp_name );
     $types = $this->_l( 'media_mime',
       array(
-        'application/json',
         'application/octet-stream',
         'application/ogg',
         'application/pdf',
         'application/photoshop',
         'application/rar',
-        'application/svg+xml',
         'application/vnd.ms-excel',
         'application/vnd.ms-powerpoint',
         'application/vnd.ms-word',
@@ -508,6 +506,55 @@ class App {
     }
     $name = $this->esc_slug( $_FILES[ 'file' ][ 'name' ] );
     $basename = basename( empty( $basename ) ? strip_tags( $name ) : $basename );
+    $extension = explode( '.', $basename );
+    $extension = strtolower( end( $extension ) );
+    $extensions = $this->_l( 'media_extension',
+      array(
+        'avi',
+        'avif',
+        'css',
+        'doc',
+        'docx',
+        'flv',
+        'gif',
+        'htm',
+        'html',
+        'ico',
+        'jpeg',
+        'jpg',
+        'kdbx',
+        'm4a',
+        'mkv',
+        'mov',
+        'mp3',
+        'mp4',
+        'mpg',
+        'ods',
+        'odt',
+        'ogg',
+        'ogv',
+        'pdf',
+        'png',
+        'ppt',
+        'pptx',
+        'psd',
+        'rar',
+        'svg',
+        'txt',
+        'xls',
+        'xlsx',
+        'webm',
+        'webp',
+        'wmv',
+        'zip'
+      )
+    );
+    if ( ! in_array( $extension, $extensions ) ) {
+      if ( $extension !== $basename || 'text/plain' !== $type ) {
+        $msg = 'File extension not allowed';
+        return false;
+      }
+    }
     if ( move_uploaded_file( $tmp_name, $this->root( 'media/' . $basename ) ) ) {
       $msg = sprintf( 'File <b>%s</b> has been uploaded successfully', $basename );
       $this->get_action( 'upload_media', $basename );
@@ -1064,7 +1111,7 @@ class App {
               <option value="false"' . ( $this->get( 'blog' ) ? '' : ' selected' ) . '>No</option>
             </select>
             <label for="footer" class="ss-label">Footer</label>
-            <textarea rows="5" id="footer" name="footer" placeholder="' . sprintf( 'Copyright &copy; %d', date( 'Y' ) ) . '" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $this->get( 'footer' ) ) . '</textarea>
+            <textarea rows="5" id="footer" name="footer" placeholder="' . sprintf( 'Copyright &copy; %d', date( 'Y' ) ) . '" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto editable">' . $this->esc( $this->get( 'footer' ) ) . '</textarea>
             ' . $this->get_action( 'form' ) . '
             <input type="hidden" name="token" value="' . $this->token() . '">
             <input type="submit" name="save" value="Save changes" class="ss-btn ss-mobile ss-w-5">

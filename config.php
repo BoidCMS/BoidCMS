@@ -25,7 +25,7 @@ return array(
       'thumb' => '',
       'date' => '',
       'tpl' => '',
-      'pub' => true
+      'pub' => false
     ),
     'home' => array(
       'type' => 'page',
