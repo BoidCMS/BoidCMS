@@ -185,7 +185,7 @@ class App {
   }
   
   /**
-   * Get filename from root
+   * Get pathname from root
    * @param string $location
    * @return string
    */
@@ -194,7 +194,7 @@ class App {
   }
   
   /**
-   * Get filename from current theme directory
+   * Get pathname from current theme directory
    * @param string $location
    * @param string $system
    * @return string
@@ -461,14 +461,14 @@ class App {
     $type = $finfo->file( $tmp_name );
     $types = $this->_l( 'media_mime',
       array(
+        'application/msword',
         'application/octet-stream',
         'application/ogg',
         'application/pdf',
-        'application/photoshop',
-        'application/rar',
+        'application/vnd.rar',
+        'application/x-rar',
         'application/vnd.ms-excel',
         'application/vnd.ms-powerpoint',
-        'application/vnd.ms-word',
         'application/vnd.oasis.opendocument.spreadsheet',
         'application/vnd.oasis.opendocument.text',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -485,11 +485,7 @@ class App {
         'image/vnd.microsoft.icon',
         'image/webp',
         'image/x-icon',
-        'text/css',
-        'text/html',
         'text/plain',
-        'text/x-asm',
-        'video/avi',
         'video/mp4',
         'video/mpeg',
         'video/ogg',
@@ -497,10 +493,11 @@ class App {
         'video/webm',
         'video/x-flv',
         'video/x-matroska',
-        'video/x-ms-wmv'
+        'video/x-ms-wmv',
+        'video/x-msvideo'
       )
     );
-    if ( ! in_array( $type, $types ) ) {
+    if ( ! in_array( $type, $types, true ) ) {
       $msg = 'File format not allowed';
       return false;
     }
@@ -512,17 +509,13 @@ class App {
       array(
         'avi',
         'avif',
-        'css',
         'doc',
         'docx',
         'flv',
         'gif',
-        'htm',
-        'html',
         'ico',
         'jpeg',
         'jpg',
-        'kdbx',
         'm4a',
         'mkv',
         'mov',
@@ -537,19 +530,18 @@ class App {
         'png',
         'ppt',
         'pptx',
-        'psd',
         'rar',
         'svg',
         'txt',
-        'xls',
-        'xlsx',
         'webm',
         'webp',
         'wmv',
+        'xls',
+        'xlsx',
         'zip'
       )
     );
-    if ( ! in_array( $extension, $extensions ) ) {
+    if ( ! in_array( $extension, $extensions, true ) ) {
       if ( $extension !== $basename || 'text/plain' !== $type ) {
         $msg = 'File extension not allowed';
         return false;
@@ -636,7 +628,7 @@ class App {
       $slug = ( $slug . '-' . bin2hex( random_bytes(2) ) );
     }
     $slug = ( empty( $slug ) ? bin2hex( random_bytes(2) ) : $slug );
-    return $this->_( $slug, 'slugify', $text );
+    return $this->get_filter( $slug, 'slugify', $text );
   }
   
   /**
@@ -692,7 +684,7 @@ class App {
    */
   public function auth( ?string $location = null, bool $post = true ): void {
     $location ??= $this->page;
-    $token = ( $post ? ( $_POST[ 'token' ] ?? '' ) : ( $_GET[ 'token' ] ?? '' ) );
+    $token = $this->esc( $post ? ( $_POST[ 'token' ] ?? '' ) : ( $_GET[ 'token' ] ?? '' ) );
     if ( ! hash_equals( $this->token(), $token ) ) {
       $this->get_action( 'token_error', $token );
       $this->alert( 'Invalid token, please try again.', 'error' );
@@ -708,6 +700,7 @@ class App {
     global $layout, $action, $page;
     $page = $this->esc( $_GET[ 'page' ] ?? '' );
     $action = ( $_GET[ 'action' ] ?? '' );
+    $action = ( is_array( $action ) ? '' : $action );
     $layout = array( 'title' => '', 'content' => '' );
     if ( ! $this->logged_in ) {
       $this->get_action( 'login' );
