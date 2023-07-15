@@ -11,7 +11,7 @@ return array(
     'username' => 'admin',
     'password' => password_hash( 'password', PASSWORD_DEFAULT ),
     'footer' => 'Copyright &copy; ' . date( 'Y' ),
-    'theme' => 'visual',
+    'theme' => 'nimble',
     'admin' => 'admin',
     'blog' => false
   ),
@@ -21,11 +21,11 @@ return array(
       'title' => 'Not Found',
       'descr' => '404 Page Not Found',
       'keywords' => '404',
-      'content' => '<p>It looks like nothing was found at this location.</p>',
+      'content' => '<p style="text-align:center">It looks like nothing was found at this location.</p>',
       'thumb' => '',
       'date' => '',
       'tpl' => '',
-      'pub' => true
+      'pub' => false
     ),
     'home' => array(
       'type' => 'page',
