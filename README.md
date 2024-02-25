@@ -15,9 +15,6 @@
   </a>
   <img alt="GitHub release (latest SemVer including pre-releases)" src="https://img.shields.io/github/v/release/BoidCMS/BoidCMS?include_prereleases">
   <img alt="GitHub" src="https://img.shields.io/github/license/BoidCMS/BoidCMS">
-  <a href="https://twitter.com/intent/tweet?text=Flat file CMS for building simple websites and blogs:&url=https%3A%2F%2Fgithub.com%2FBoidCMS%2FBoidCMS">
-    <img alt="Twitter" src="https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2FBoidCMS%2FBoidCMS">
-  </a>
 </p>
 
 # BoidCMS
@@ -29,18 +26,15 @@ You only need a web server with PHP support.
 ## Origin
 This project is a fork of [WonderCMS](https://www.wondercms.com).
 
-
 ## Requirements
  - PHP 8 or greater
  - Web server (Apache with `mod_rewrite`)
-
 
 ## Installation
 - Download the latest version on this repo.
 - Extract the zip file.
 - Upload the extracted content to your server or hosting.
-- Follow the [admin page](https://boidcms.github.io/#/install?id=default-credentials) to configure your new website.
-
+- Follow the [admin page](https://boidcms.github.io/#/install?id=default-login-credentials) to configure your new website.
 
 ## Features
   - One Step [Install](https://boidcms.github.io/#/install)
@@ -58,11 +52,9 @@ This project is a fork of [WonderCMS](https://www.wondercms.com).
   - Content Type
   - GDPR Compliant
 
-
 ## Support
 Ask questions, get support, and discuss BoidCMS.
  - [Discussions](https://github.com/BoidCMS/BoidCMS/discussions)
-
 
 ## License
 BoidCMS is an open source software [licensed](https://boidcms.github.io/#/license) under the MIT License.
