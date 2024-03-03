@@ -883,11 +883,11 @@ class App {
               <label for="title" class="ss-label">Title <span class="ss-red">*</span></label>
               <input type="text" id="title" name="title" placeholder="Page title" value="' . $data[ 'title' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
               <label for="descr" class="ss-label">Description</label>
-              <textarea rows="5" id="descr" name="descr" placeholder="Page description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $data[ 'descr' ] . '</textarea>
+              <textarea rows="5" id="descr" name="descr" placeholder="Page description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $data[ 'descr' ] ) . '</textarea>
               <label for="keywords" class="ss-label">Keywords</label>
               <input type="text" id="keywords" name="keywords" placeholder="Keywords, for, seo" value="' . $data[ 'keywords' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
               <label for="content" class="ss-label">Content</label>
-              <textarea rows="20" id="content" name="content" placeholder="Start writing ✍" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $data[ 'content' ] . '</textarea>
+              <textarea rows="20" id="content" name="content" placeholder="Start writing ✍" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $data[ 'content' ] ) . '</textarea>
               <label for="permalink" class="ss-label">Permalink</label>
               <input type="text" id="permalink" name="permalink" placeholder="custom/permalink.html" value="' . $this->esc_slug( $data[ 'permalink' ] ?? $action ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
               <label for="tpl" class="ss-label">Template</label>
@@ -912,7 +912,7 @@ class App {
             $layout[ 'content' ] .= '
               </select>
               <label for="date" class="ss-label">Date <span class="ss-red">*</span></label>
-              <input type="datetime-local" id="date" name="date" step="any" value="' . $data[ 'date' ] . '" class="ss-select ss-mobile ss-w-6 ss-mx-auto" required>
+              <input type="datetime-local" id="date" name="date" step="any" value="' . $this->esc( $data[ 'date' ] ) . '" class="ss-select ss-mobile ss-w-6 ss-mx-auto" required>
               <label for="pub" class="ss-label">Publish</label>
               <select id="pub" name="pub" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
                 <option value="true"' . ( $data[ 'pub' ] ? ' selected' : '' ) . '>Yes</option>
@@ -1096,13 +1096,13 @@ class App {
             <label for="keywords" class="ss-label">Keywords</label>
             <input type="text" id="keywords" name="keywords" placeholder="Keywords, for, seo" value="' . $this->get( 'keywords' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
             <label for="descr" class="ss-label">Description</label>
-            <textarea rows="10" id="descr" name="descr" placeholder="Site description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->get( 'descr' ) . '</textarea>
+            <textarea rows="10" id="descr" name="descr" placeholder="Site description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $this->get( 'descr' ) ) . '</textarea>
             <label for="email" class="ss-label">Email</label>
-            <input type="email" id="email" name="email" placeholder="mail@example.com" value="' . $this->get( 'email' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+            <input type="email" id="email" name="email" placeholder="mail@example.com" value="' . $this->esc( $this->get( 'email' ) ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
             <label for="username" class="ss-label">Username <span class="ss-red">*</span></label>
             <input type="text" id="username" name="username" placeholder="John Doe" value="' . $this->esc( $this->get( 'username' ) ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
             <label for="url" class="ss-label">Site URL <span class="ss-red">*</span></label>
-            <input type="url" id="url" name="url" placeholder="' . $this->get( 'url' ) . '" value="' . $this->get( 'url' ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
+            <input type="url" id="url" name="url" placeholder="' . $this->get( 'url' ) . '" value="' . $this->esc( $this->get( 'url' ) ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
             <label for="admin" class="ss-label">Admin URL <span class="ss-red">*</span></label>
             <input type="text" id="admin" name="admin" placeholder="example/' . bin2hex( random_bytes(3) ) . '/admin" value="' . $this->admin_url() . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
             <label for="blog" class="ss-label">Enable Blog</label>
