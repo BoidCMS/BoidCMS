@@ -6,7 +6,7 @@ return array(
     'keywords' => 'BoidCMS, keywords, for, seo',
     'subtitle' => 'Simple, fast, super extensible.',
     'descr' => 'Flat file CMS for building simple websites and blogs.',
-    'url' => 'http' . ( ( ! empty( $_SERVER[ 'HTTPS' ] ) && ( $_SERVER[ 'HTTPS' ] !== 'off' ) ) || ( ( int ) $_SERVER[ 'SERVER_PORT' ] === 443 ) ? 's' : '' ) . '://' . $_SERVER[ 'SERVER_NAME' ] . ( ( ( $_SERVER[ 'SERVER_PORT' ] == '80' ) || ( $_SERVER[ 'SERVER_PORT' ] == '443' ) ) ? '' : ':' . $_SERVER[ 'SERVER_PORT' ] ) . ( ( dirname( $_SERVER[ 'SCRIPT_NAME' ] ) === '/' ) ? '' : dirname( $_SERVER[ 'SCRIPT_NAME' ] ) ) . '/',
+    'url' => 'http' . ( filter_var( $_SERVER[ 'HTTPS' ] ?? 0, FILTER_VALIDATE_BOOL ) || ( $_SERVER[ 'SERVER_PORT' ] == 443 ) ? 's' : '' ) . '://' . $_SERVER[ 'SERVER_NAME' ] . ( ( ( $_SERVER[ 'SERVER_PORT' ] == 80 ) || ( $_SERVER[ 'SERVER_PORT' ] == 443 ) ) ? '' : ':' . $_SERVER[ 'SERVER_PORT' ] ) . ( ( dirname( $_SERVER[ 'SCRIPT_NAME' ] ) === '/' ) ? '' : dirname( $_SERVER[ 'SCRIPT_NAME' ] ) ) . '/',
     'email' => 'mail@example.com',
     'username' => 'admin',
     'password' => password_hash( 'password', PASSWORD_DEFAULT ),
