@@ -1010,7 +1010,7 @@ class App {
           $layout[ 'content' ] = '
           <ul class="ss-list ss-fieldset ss-mobile ss-w-6 ss-mx-auto">';
           if ( empty( $this->plugins ) ) {
-            $layout[ 'content' ] = '<span class="ss-small">NO PLUGINS</span>';
+            $layout[ 'content' ] .= '<span class="ss-small">NO PLUGINS</span>';
           }
           foreach ( $this->plugins as $plugin ) {
             $layout[ 'content' ] .= '
