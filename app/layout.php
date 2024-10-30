@@ -8,7 +8,7 @@
     <meta name="generator" content="BoidCMS">
     <meta name="theme-color" content="#00bcd4">
     <title><?= $layout[ 'title' ] ?> &mdash; BoidCMS</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sysacss@0.1/sysa.min.css">
+    <link rel="preload stylesheet" href="https://cdn.jsdelivr.net/npm/sysacss@0.1/sysa.min.css">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNjQwIj48cGF0aCBmaWxsPSIjMDBiY2Q0IiBkPSJNMzIwIDExYTMwOSAzMDkgMCAxIDEgMCA2MTggMzA5IDMwOSAwIDAgMSAwLTYxOHoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNDcxIDM1MHYtMjJoLTQ1di0yM2gyM3YtMjNoMjJ2LTkxaC0yMnYtMjJoLTIzdi0yM0gxNDZ2NjhoMjN2MjIwaC0yM3Y2MGgzMDN2LTIzaDIydi0yMmgyM3YtOTloLTIzem0tNzUgNjFoLTIzdjIzSDI0NHYtNjloMTI5djIzaDIzdjIzem0wLTE1OWgtMjN2MjNIMjQ0di02OWgxMjl2MjNoMjN2MjN6Ii8+PC9zdmc+Cg==">
     <?= $App->get_action( 'admin_head' ) ?>
   </head>

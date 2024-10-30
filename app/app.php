@@ -9,7 +9,7 @@
  * @package BoidCMS
  * @author Shuaib Yusuf Shuaib
  * @link https://boidcms.github.io
- * @version 2.1.0
+ * @version 2.1.1
  * @licence MIT
  */
 #[AllowDynamicProperties]
@@ -83,7 +83,7 @@ class App {
       file_put_contents( $this->root( 'data/database.json' ), $json, LOCK_EX );
     }
     $this->actions = array();
-    $this->version = '2.1.0';
+    $this->version = '2.1.1';
     $this->logged_in = ( isset( $_SESSION[ 'logged_in' ], $_SESSION[ 'root' ] ) && $this->root === $_SESSION[ 'root' ] );
     $this->database = json_decode( file_get_contents( $this->root( 'data/database.json' ) ), true );
     $this->plugins = array_map( 'basename', glob( $this->root( 'plugins/*' ), GLOB_ONLYDIR ) );
@@ -382,32 +382,32 @@ class App {
   /**
    * Create new page
    * @param string $slug
-   * @param array $details
+   * @param array $fields
    * @return bool
    */
-  public function create_page( string $slug, array $details ): bool {
-    $this->get_action( 'create_page', $slug, $details );
-    $keys = array_keys( $details );
-    $details = array_map( fn ( $value, $key ) => in_array( $key, [ 'title', 'descr', 'keywords' ] ) ? htmlspecialchars( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8', false ) : $value, $details, $keys );
-    $this->database[ 'pages' ][ $slug ] = array_combine( $keys, $details );
+  public function create_page( string $slug, array $fields ): bool {
+    $this->get_action( 'create_page', $slug, $fields );
+    $keys = array_keys( $fields );
+    $fields = array_map( fn ( $value, $key ) => in_array( $key, [ 'title', 'descr', 'keywords' ] ) ? htmlspecialchars( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8', false ) : $value, $fields, $keys );
+    $this->database[ 'pages' ][ $slug ] = array_combine( $keys, $fields );
     return $this->save();
   }
   
   /**
    * Modify page
    * @param string $slug
-   * @param string $permalink
-   * @param array $updates
+   * @param string $new_slug
+   * @param array $fields
    * @return bool
    */
-  public function update_page( string $slug, string $permalink, array $updates ): bool {
-    $this->get_action( 'update_page', $slug, $permalink, $updates );
-    $keys = array_keys( $updates );
-    $updates = array_map( fn ( $value, $key ) => in_array( $key, [ 'title', 'descr', 'keywords' ] ) ? htmlspecialchars( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8', false ) : $value, $updates, $keys );
-    $updates = array_merge( $this->data( 'pages' )[ $slug ], array_combine( $keys, $updates ) );
-    $this->database[ 'pages' ][ $slug ] = $updates;
+  public function update_page( string $slug, string $new_slug, array $fields ): bool {
+    $this->get_action( 'update_page', $slug, $new_slug, $fields );
+    $keys = array_keys( $fields );
+    $fields = array_map( fn ( $value, $key ) => in_array( $key, [ 'title', 'descr', 'keywords' ] ) ? htmlspecialchars( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8', false ) : $value, $fields, $keys );
+    $fields = array_merge( $this->data( 'pages' )[ $slug ], array_combine( $keys, $fields ) );
+    $this->database[ 'pages' ][ $slug ] = $fields;
     $data = json_encode( $this->database, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE );
-    $data = str_replace( '"' . addcslashes( $slug, '\/' ) . '":', '"' . addcslashes( $permalink, '\/' ) . '":', $data );
+    $data = str_replace( '"' . addcslashes( $slug, '\/' ) . '":', '"' . addcslashes( $new_slug, '\/' ) . '":', $data );
     return $this->save( json_decode( $data, true ) );
   }
   
@@ -504,7 +504,7 @@ class App {
       return false;
     }
     $name = $this->esc_slug( $_FILES[ 'file' ][ 'name' ] );
-    $basename = basename( empty( $basename ) ? strip_tags( $name ) : $basename );
+    $basename = basename( empty( $basename ) ? $name : $basename );
     $extension = explode( '.', $basename );
     $extension = strtolower( end( $extension ) );
     $extensions = $this->_l( 'media_extension',
@@ -657,7 +657,7 @@ class App {
   public function esc_slug( string $text, string $alt = '' ): string {
     $slug = stripslashes( $text );
     $slug = filter_var( $slug, FILTER_SANITIZE_URL );
-    $slug = str_replace( array( '?', '&', '#', '"' ), '', $slug );
+    $slug = str_replace( array( '?', '&', '=', '#', "'", '"', '<', '>' ), '', $slug );
     $slug = trim( ltrim( empty( $slug ) ? $alt : $slug, './' ) );
     return $this->get_filter( $slug, 'esc_slug', $text, $alt );
   }
@@ -808,7 +808,7 @@ class App {
             }
             if ( $this->create_page( $permalink, $_POST ) ) {
               $this->get_action( 'create_success', $permalink );
-              $this->alert( 'Page created successfully' . ( $_POST[ 'pub' ] ? sprintf( ', click <a href="%s" target="_blank" class="ss-dotted">here</a> to preview.', $this->url( $permalink ) ) : '.' ), 'success' );
+              $this->alert( 'Page created successfully' . ( $_POST[ 'pub' ] ? sprintf( ', click <a href="%s" target="_blank" class="ss-dotted">here</a> to see it live.', $this->url( $permalink ) ) : '.' ), 'success' );
               $this->go( $this->admin_url() );
             }
             $this->get_action( 'create_error', $permalink, $_POST );
@@ -822,9 +822,9 @@ class App {
           <form action="' . $this->admin_url( '?page=delete', true ) . '" method="post">
             <label for="pages" class="ss-label">Pages <span class="ss-red">*</span></label>
             <select id="pages" name="pages[]" class="ss-select ss-mobile ss-w-6 ss-mx-auto" multiple required>';
-          foreach ( $this->data( 'pages' ) as $slug => $details ) {
+          foreach ( $this->data( 'pages' ) as $slug => $fields ) {
             if ( intval( $slug ) !== 404 && $slug !== 'home' ) {
-              $layout[ 'content' ] .= '<option value="' . $slug . '">' . $details[ 'title' ] . ' (' . $slug . ')' . '</option>';
+              $layout[ 'content' ] .= '<option value="' . $slug . '">' . $fields[ 'title' ] . ' (' . $slug . ')' . '</option>';
             }
           }
           $layout[ 'content' ] .= '
@@ -858,8 +858,8 @@ class App {
               <label for="page" class="ss-label">Choose Page <span class="ss-red">*</span></label>
               <select id="page" name="action" class="ss-select ss-mobile ss-w-6 ss-mx-auto" required>
                 <option value selected disabled>Choose page</option>';
-              foreach ( $this->data( 'pages' ) as $slug => $details ) {
-                $layout[ 'content' ] .= '<option value="' . $slug . '">' . $details[ 'title' ] . ' (' . $slug . ')' . '</option>';
+              foreach ( $this->data( 'pages' ) as $slug => $fields ) {
+                $layout[ 'content' ] .= '<option value="' . $slug . '">' . $fields[ 'title' ] . ' (' . $slug . ')' . '</option>';
               }
               $layout[ 'content' ] .= '
               </select>
@@ -869,9 +869,6 @@ class App {
           } else {
             $data = ( empty( $_POST ) ? $this->data( 'pages' )[ $action ] : $_POST );
             $data[ 'pub' ] = ( $data[ 'pub' ] === 'true' || $data[ 'pub' ] === true ? true : false );
-            $keys = array_keys( $data );
-            $data = array_map( fn ( $value, $key ) => in_array( $key, [ 'title', 'descr', 'keywords', 'content', 'tpl', 'date' ] ) ? htmlspecialchars( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8', false ) : $value, $data, $keys );
-            $data = array_combine( $keys, $data );
             $layout[ 'content' ] = '
             <form action="' . $this->admin_url( '?page=update&action=' . $action, true ) . '" method="post" enctype="multipart/form-data">
               <label for="type" class="ss-label">Type</label>
@@ -946,7 +943,7 @@ class App {
             $update = ( intval( $action ) === 404 || $action === 'home' ? $action : $update );
             if ( $this->update_page( $action, $update, $_POST ) ) {
               $this->get_action( 'update_success', $action );
-              $this->alert( 'Page updated successfully' . ( $_POST[ 'pub' ] ? sprintf( ', click <a href="%s" target="_blank" class="ss-dotted">here</a> to preview.', $this->url( $update ) ) : '.' ), 'success' );
+              $this->alert( 'Page updated successfully' . ( $_POST[ 'pub' ] ? sprintf( ', click <a href="%s" target="_blank" class="ss-dotted">here</a> to see it live.', $this->url( $update ) ) : '.' ), 'success' );
               $this->go( $this->admin_url( '?page=update' ) );
             }
             $this->get_action( 'update_error', $action, $_POST );
@@ -971,6 +968,9 @@ class App {
               <h3 class="ss-monospace">Uploaded Files</h3>
               <hr class="ss-hr">
             </li>';
+          if ( empty( $this->medias ) ) {
+            $layout[ 'content' ] .= '<span class="ss-small">NO FILES</span>';
+          }
           foreach ( $this->medias as $media ) {
             $layout[ 'content' ] .= '
               <li class="ss-responsive">
@@ -1009,6 +1009,9 @@ class App {
           $layout[ 'title' ] = 'Plugins';
           $layout[ 'content' ] = '
           <ul class="ss-list ss-fieldset ss-mobile ss-w-6 ss-mx-auto">';
+          if ( empty( $this->plugins ) ) {
+            $layout[ 'content' ] .= '<span class="ss-small">NO PLUGINS</span>';
+          }
           foreach ( $this->plugins as $plugin ) {
             $layout[ 'content' ] .= '
             <li class="ss-responsive">
@@ -1054,7 +1057,7 @@ class App {
               <h4 class="ss-monospace ss-responsive">' . ucwords( str_replace( '-', ' ', $theme ) ) . '</h4>
               <div class="ss-btn-group ss-full ss-my-4">
                 <a ' . ( $this->get( 'theme' ) === $theme ? '' : 'href="' . $this->admin_url( '?page=themes&action=activate&theme=' . $theme . '&token=' . $this->token(), true ) . '" ' ) . 'class="ss-btn ss-w-5' . ( $this->get( 'theme' ) === $theme ? ' ss-disabled' : '' ) . '">Activate</a>
-                <a ' . ( $this->get( 'theme' ) === $theme ? 'href="' . $this->admin_url( '?page=' . $theme, true ) . '" ' : '' ) . 'class="ss-btn ss-inverted ss-w-5' . ( $this->get( 'theme' ) === $theme ? '' : ' ss-disabled' ) . '">Configure</a>
+                <a ' . ( $this->get( 'theme' ) === $theme ? 'href="' . $this->admin_url( '?page=' . $theme, true ) . '" ' : '' ) . 'class="ss-btn ss-inverted ss-w-5' . ( $this->get( 'theme' ) === $theme ? '' : ' ss-disabled' ) . '">Customize</a>
               </div>
               ' . $this->get_action( 'theme_list_end', $theme ) . '
             </li>';
@@ -1200,7 +1203,7 @@ class App {
             <li class="ss-responsive">
               <h4 class="ss-monospace">Recently Created</h4>
               <hr class="ss-hr ss-w-3 ss-mx-auto">
-              <p class="ss-large"><a href="' . $this->url( $last ) . '" target="_blank" class="ss-dotted">' . $this->esc( $this->page( 'title', $last ) ) . '</a></p>
+              <p class="ss-large"><a href="' . $this->url( $last ) . '" target="_blank" class="ss-dotted">' . htmlspecialchars( $this->page( 'title', $last ), ENT_QUOTES | ENT_HTML5, 'UTF-8', false ) . '</a></p>
             </li>
             ' . $this->get_action( 'dashboard' ) . '
           </ul>';
@@ -1222,7 +1225,7 @@ class App {
       case $this->admin_url():
         $this->admin();
         break;
-      case $this->_( '', 'index' ):
+      case $this->get_filter( '', 'index' ):
         $this->get_action( 'home' );
         if ( $this->get( 'blog' ) ) {
           require_once $this->theme( 'blog.php' );
