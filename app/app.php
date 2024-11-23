@@ -9,7 +9,7 @@
  * @package BoidCMS
  * @author Shuaib Yusuf Shuaib
  * @link https://boidcms.github.io
- * @version 2.1.1
+ * @version 2.1.2
  * @licence MIT
  */
 #[AllowDynamicProperties]
@@ -83,7 +83,7 @@ class App {
       file_put_contents( $this->root( 'data/database.json' ), $json, LOCK_EX );
     }
     $this->actions = array();
-    $this->version = '2.1.1';
+    $this->version = '2.1.2';
     $this->logged_in = ( isset( $_SESSION[ 'logged_in' ], $_SESSION[ 'root' ] ) && $this->root === $_SESSION[ 'root' ] );
     $this->database = json_decode( file_get_contents( $this->root( 'data/database.json' ) ), true );
     $this->plugins = array_map( 'basename', glob( $this->root( 'plugins/*' ), GLOB_ONLYDIR ) );
@@ -840,10 +840,10 @@ class App {
             foreach ( $pages as $page ) {
               if ( $this->delete_page( $page ) ) {
                 $this->get_action( 'delete_success', $page );
-                $this->alert( sprintf( 'Page <b>%s</b> has been deleted successfully.', $page ), 'success' );
+                $this->alert( sprintf( 'Page <b>%s</b> has been deleted successfully.', $this->esc( $page ) ), 'success' );
               } else {
                 $this->get_action( 'delete_error', $page );
-                $this->alert( sprintf( 'Page <b>%s</b> was not deleted, please try again.', $page ), 'error' );
+                $this->alert( sprintf( 'Page <b>%s</b> was not deleted, please try again.', $this->esc( $page ) ), 'error' );
               }
             }
             $this->go( $this->admin_url( '?page=delete' ) );
@@ -989,10 +989,10 @@ class App {
             $this->get_action( 'on_media' );
             $file = ( $_GET[ 'file' ] ?? '' );
             if ( $this->delete_media( $file ) ) {
-              $this->alert( sprintf( 'File <b>%s</b> has been deleted successfully.', $file ), 'success' );
+              $this->alert( sprintf( 'File <b>%s</b> has been deleted successfully.', $this->esc( $file ) ), 'success' );
               $this->go( $this->admin_url( '?page=media' ) );
             }
-            $this->alert( sprintf( 'File <b>%s</b> was not deleted, please try again.', $file ), 'error' );
+            $this->alert( sprintf( 'File <b>%s</b> was not deleted, please try again.', $this->esc( $file ) ), 'error' );
             $this->go( $this->admin_url( '?page=media' ) );
           } else if ( isset( $_POST[ 'upload' ] ) ) {
             $this->auth();

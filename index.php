@@ -9,7 +9,7 @@
  * @package BoidCMS
  * @author Shuaib Yusuf Shuaib
  * @link https://boidcms.github.io
- * @version 2.1.1
+ * @version 2.1.2
  * @licence MIT
  */
 session_start();
