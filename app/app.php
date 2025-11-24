@@ -82,7 +82,7 @@ class App {
       $json = json_encode( $config, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE );
       file_put_contents( $this->root( 'data/database.json' ), $json, LOCK_EX );
     }
-    $this->actions = array();
+    $this->actions = [];
     $this->version = '2.1.2';
     $this->logged_in = ( isset( $_SESSION[ 'logged_in' ], $_SESSION[ 'root' ] ) && $this->root === $_SESSION[ 'root' ] );
     $this->database = json_decode( file_get_contents( $this->root( 'data/database.json' ) ), true );
@@ -93,10 +93,10 @@ class App {
   }
   
   /**
-   * Alias of get_filter() method
+   * Alias of get_filter method
    * @param mixed $value
    * @param string $action
-   * @param mixed ...$args
+   * @param mixed[] $args
    * @return mixed
    */
   public function _( mixed $value, string $action = 'default', mixed ...$args ): mixed {
@@ -106,11 +106,11 @@ class App {
   /**
    * Dynamic indexed array creation
    * @param string $action
-   * @param array $custom
+   * @param string[] $custom
    * @param string $del
    * @return array
    */
-  public function _l( string $action, array $custom = array(), string $del = ',' ): array {
+  public function _l( string $action, array $custom = [], string $del = ',' ): array {
     $option = $this->get_action( $action );
     $option =            ( $option ?? '' );
     $option =     explode( $del, $option );
@@ -208,7 +208,7 @@ class App {
   
   /**
    * Save database changes
-   * @param ?array $data
+   * @param array|null $data
    * @return bool
    */
   public function save( ?array $data = null ): bool {
@@ -226,13 +226,13 @@ class App {
   
   /**
    * Readonly version of database
-   * @param ?string $index
+   * @param string|null $index
    * @return array
    */
   public function data( ?string $index = null ): array {
     $data = $this->database;
     if ( null !== $index ) {
-      return ( $data[ $index ] ?? array() );
+      return ( $data[ $index ] ?? [] );
     }
     return $data;
   }
@@ -247,7 +247,7 @@ class App {
   
   /**
    * Set a callback function to action
-   * @param string | array $action
+   * @param string|array $action
    * @param callable $callback
    * @param int $priority
    * @return void
@@ -276,7 +276,7 @@ class App {
   /**
    * Trigger an event
    * @param string $action
-   * @param mixed ...$args
+   * @param mixed[] $args
    * @return mixed
    */
   public function get_action( string $action, mixed ...$args ): mixed {
@@ -295,7 +295,7 @@ class App {
    * Apply filter
    * @param mixed $value
    * @param string $action
-   * @param mixed ...$args
+   * @param mixed[] $args
    * @return mixed
    */
   public function get_filter( mixed $value, string $action, mixed ...$args ): mixed {
@@ -343,7 +343,7 @@ class App {
   }
   
   /**
-   * Get all admin alerts
+   * Display all admin alerts
    * @return void
    */
   public function alerts(): void {
@@ -363,7 +363,7 @@ class App {
   /**
    * Get page field value
    * @param string $index
-   * @param ?string $slug
+   * @param string|null $slug
    * @return mixed
    */
   public function page( string $index, ?string $slug = null ): mixed {
@@ -376,13 +376,13 @@ class App {
         return $this->get_filter( $value, 'page', ...$args );
       }
     }
-    return $this->get_filter( null, 'page', $index, $slug, array() );
+    return $this->get_filter( null, 'page', $index, $slug, [] );
   }
   
   /**
    * Create new page
    * @param string $slug
-   * @param array $fields
+   * @param mixed[] $fields
    * @return bool
    */
   public function create_page( string $slug, array $fields ): bool {
@@ -397,7 +397,7 @@ class App {
    * Modify page
    * @param string $slug
    * @param string $new_slug
-   * @param array $fields
+   * @param mixed[] $fields
    * @return bool
    */
   public function update_page( string $slug, string $new_slug, array $fields ): bool {
@@ -433,8 +433,8 @@ class App {
   
   /**
    * Upload media file
-   * @param ?string $msg
-   * @param ?string $basename
+   * @param string|null &$msg
+   * @param string|null $basename
    * @return bool
    */
   public function upload_media( ?string &$msg = null, ?string &$basename = null ): bool {
@@ -634,7 +634,7 @@ class App {
   }
   
   /**
-   * Redirections
+   * Internal redirections
    * @param string $location
    * @return void
    */
@@ -680,7 +680,7 @@ class App {
   
   /**
    * Validate csrf token
-   * @param ?string $location
+   * @param string|null $location
    * @param bool $post
    * @return void
    */
@@ -695,7 +695,7 @@ class App {
   }
   
   /**
-   * Admin backend handler
+   * Admin dashboard handler
    * @return void
    */
   public function admin(): void {
@@ -836,7 +836,7 @@ class App {
           if ( isset( $_POST[ 'delete' ] ) ) {
             $this->auth();
             $this->get_action( 'on_delete' );
-            $pages = ( $_POST[ 'pages' ] ?? array() );
+            $pages = ( $_POST[ 'pages' ] ?? [] );
             foreach ( $pages as $page ) {
               if ( $this->delete_page( $page ) ) {
                 $this->get_action( 'delete_success', $page );
@@ -1108,7 +1108,7 @@ class App {
             <input type="url" id="url" name="url" placeholder="' . $this->get( 'url' ) . '" value="' . $this->esc( $this->get( 'url' ) ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
             <label for="admin" class="ss-label">Admin URL <span class="ss-red">*</span></label>
             <input type="text" id="admin" name="admin" placeholder="example/' . bin2hex( random_bytes(3) ) . '/admin" value="' . $this->admin_url() . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
-            <label for="blog" class="ss-label">Enable Blog</label>
+            <label for="blog" class="ss-label">Blog Mode</label>
             <select id="blog" name="blog" class="ss-select ss-mobile ss-w-6 ss-mx-auto">
               <option value="true"' . ( $this->get( 'blog' ) ? ' selected' : '' ) . '>Yes</option>
               <option value="false"' . ( $this->get( 'blog' ) ? '' : ' selected' ) . '>No</option>
@@ -1264,4 +1264,3 @@ class App {
     $this->get_action( 'rendered' );
   }
 }
-?>

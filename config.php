@@ -1,4 +1,5 @@
 <?php defined( 'App' ) or die( 'BoidCMS' );
+
 return array(
   'site' => array(
     'lang' => 'en',
@@ -52,4 +53,3 @@ return array(
   ),
   'installed' => array()
 );
-?>

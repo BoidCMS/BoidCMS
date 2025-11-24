@@ -17,4 +17,3 @@ define( 'App', true );
 require ( __DIR__ . '/app/app.php' );
 $App = new App( __DIR__ );
 $App->render();
-?>
