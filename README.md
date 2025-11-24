@@ -18,43 +18,59 @@
 </p>
 
 # BoidCMS
-[BoidCMS](https://boidcms.github.io) is a free and open-source flat file CMS for building simple websites and blogs, developed using PHP and uses JSON as a database.
 
-It's installed without configuring or installing any relational database like MySQL.
-You only need a web server with PHP support.
+**BoidCMS** is a free and open-source flat-file CMS developed in **PHP**. It is designed for simple, fast websites but built with a focus on **modular architecture** and **backend extensibility** for developers. It uses JSON as it's primary data store, eliminating the need for relational databases like MySQL.
 
-## Origin
-This project is a fork of [WonderCMS](https://www.wondercms.com).
+---
 
 ## Requirements
- - PHP 8 or greater
- - Web server (Apache with `mod_rewrite`)
+
+ - PHP 8+
+ - Web server (Apache with `mod_rewrite` recommended)
+
+---
 
 ## Installation
+
 - Download the latest version on this repo.
 - Extract the zip file.
 - Upload the extracted content to your server or hosting.
 - Follow the [admin page](https://boidcms.github.io/#/install?id=default-login-credentials) to configure your new website.
 
+---
+
 ## Features
+
+BoidCMS includes all standard CMS features, along with advanced modules engineered for systems governance and automation.
+
+### Standard Features
+
   - One Step [Install](https://boidcms.github.io/#/install)
-  - Free and Open Source
   - Simple and Easy to Navigate Admin Panel
-  - Themes and Plugins Support
-  - Super Extensible
-  - CSRF Authentication
-  - Custom Admin URL
-  - Custom Page Permalink
-  - Custom Page Template
-  - Blog Option
-  - File Manager
-  - SEO Friendly
-  - Content Type
-  - GDPR Compliant
+  - Custom Admin URL, Page Permalink, Page Template
+  - Blog Option, File Manager, and SEO Friendly
+  - CSRF Authentication & GDPR Compliant
 
-## Support
-Ask questions, get support, and discuss BoidCMS.
- - [Discussions](https://github.com/BoidCMS/BoidCMS/discussions)
+### Advanced Systems
 
-## License
+These features showcase the platform's robust architecture and developer focus:
+- **Custom REST API:** A core plugin provides full **CRUD (Create, Read, Update, Delete)** operations for site content and configuration, offering a clean service layer.
+- **Dependency Resolution Engine:** Features an in-dashboard system that manages plugins and themes. It parses complex **JSON metadata** to automatically check and resolve all module dependencies before installation.
+- **Systems Automation:** Includes a web-based **CRON task scheduler plugin** for managing asynchronous background jobs.
+- **Code Governance:** The integrated Module Distribution System requires **Pull Requests (PRs) and code review** for all community packages to ensure system integrity.
+
+---
+
+## Support and Contribution
+
+Ask questions, get support, and discuss BoidCMS on the [Discussions](https://github.com/BoidCMS/BoidCMS/discussions) page.
+
+We welcome contributions! All code submissions are subject to the project's **code review** policy to maintain system stability.
+
+---
+
+## Origin and License
+
+This project is a fork of [WonderCMS](https://www.wondercms.com).
+
 BoidCMS is an open source software [licensed](https://boidcms.github.io/#/license) under the MIT License.
