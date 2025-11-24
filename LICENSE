@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2024 Shuaib Yusuf Shuaib
+Copyright (c) 2025 Shuaib Yusuf Shuaib
 Copyright (c) 2022 Robert Isoski and WonderCMS contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
