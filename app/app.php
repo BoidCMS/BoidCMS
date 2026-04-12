@@ -9,7 +9,7 @@
  * @package BoidCMS
  * @author Shuaib Yusuf Shuaib
  * @link https://boidcms.github.io
- * @version 2.1.2
+ * @version 2.1.3
  * @licence MIT
  */
 #[AllowDynamicProperties]
@@ -83,7 +83,7 @@ class App {
       file_put_contents( $this->root( 'data/database.json' ), $json, LOCK_EX );
     }
     $this->actions = [];
-    $this->version = '2.1.2';
+    $this->version = '2.1.3';
     $this->logged_in = ( isset( $_SESSION[ 'logged_in' ], $_SESSION[ 'root' ] ) && $this->root === $_SESSION[ 'root' ] );
     $this->database = json_decode( file_get_contents( $this->root( 'data/database.json' ) ), true );
     $this->plugins = array_map( 'basename', glob( $this->root( 'plugins/*' ), GLOB_ONLYDIR ) );
@@ -762,7 +762,7 @@ class App {
               <option value="theme.php">Default</option>';
           $templates = $this->_l( 'tpl' );
           foreach ( $templates as $tpl ) {
-            $tpl = $this->esc( $tpl );
+            $tpl = $this->esc_slug( $tpl );
             $layout[ 'content' ] .= '<option value="' . $tpl . '"' . ( ( $_POST[ 'tpl' ] ?? '' ) === $tpl ? ' selected' : '' ) . '>' . $tpl . '</option>';
           }
           $layout[ 'content' ] .= '
@@ -793,6 +793,7 @@ class App {
           if ( isset( $_POST[ 'create' ] ) ) {
             $this->auth();
             $this->get_action( 'on_create' );
+            $_POST[ 'tpl' ] = $this->esc_slug( $_POST[ 'tpl' ] );
             $_POST[ 'pub' ] = filter_input( INPUT_POST, 'pub', FILTER_VALIDATE_BOOL );
             $_POST[ 'thumb' ] = ( in_array( $_POST[ 'thumb' ], $this->medias ) ? $_POST[ 'thumb' ] : '' );
             $permalink = $this->esc_slug( $_POST[ 'permalink' ], $this->slugify( $_POST[ 'title' ] ) );
@@ -892,6 +893,7 @@ class App {
                 <option value="theme.php">Default</option>';
             $templates = $this->_l( 'tpl' );
             foreach ( $templates as $tpl ) {
+              $tpl = $this->esc_slug( $tpl );
               $layout[ 'content' ] .= '<option value="' . $tpl . '"' . ( $data[ 'tpl' ] === $tpl ? ' selected' : '' ) . '>' . $tpl . '</option>';
             }
             $layout[ 'content' ] .= '
@@ -926,6 +928,7 @@ class App {
           if ( isset( $_POST[ 'update' ] ) ) {
             $this->auth();
             $this->get_action( 'on_update' );
+            $_POST[ 'tpl' ] = $this->esc_slug( $_POST[ 'tpl' ] );
             $_POST[ 'pub' ] = filter_input( INPUT_POST, 'pub', FILTER_VALIDATE_BOOL );
             $_POST[ 'pub' ] = ( intval( $action ) === 404 ? false : $_POST[ 'pub' ] );
             $_POST[ 'thumb' ] = ( in_array( $_POST[ 'thumb' ], $this->medias ) ? $_POST[ 'thumb' ] : '' );
