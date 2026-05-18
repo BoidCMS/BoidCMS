@@ -9,7 +9,7 @@
  * @package BoidCMS
  * @author Shuaib Yusuf Shuaib
  * @link https://boidcms.github.io
- * @version 2.1.3
+ * @version 2.1.4
  * @licence MIT
  */
 #[AllowDynamicProperties]
@@ -83,7 +83,7 @@ class App {
       file_put_contents( $this->root( 'data/database.json' ), $json, LOCK_EX );
     }
     $this->actions = [];
-    $this->version = '2.1.3';
+    $this->version = '2.1.4';
     $this->logged_in = ( isset( $_SESSION[ 'logged_in' ], $_SESSION[ 'root' ] ) && $this->root === $_SESSION[ 'root' ] );
     $this->database = json_decode( file_get_contents( $this->root( 'data/database.json' ) ), true );
     $this->plugins = array_map( 'basename', glob( $this->root( 'plugins/*' ), GLOB_ONLYDIR ) );
