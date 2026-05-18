@@ -192,7 +192,7 @@ class App {
    * @return string
    */
   public function root( string $location ): string {
-    return ( $this->root . '/' .$location );
+    return ( $this->root . '/' . $location );
   }
   
   /**
@@ -657,7 +657,7 @@ class App {
   public function esc_slug( string $text, string $alt = '' ): string {
     $slug = stripslashes( $text );
     $slug = filter_var( $slug, FILTER_SANITIZE_URL );
-    $slug = str_replace( array( '?', '&', '=', '#', "'", '"', '<', '>' ), '', $slug );
+    $slug = str_replace( array( '..', '?', '&', '=', '#', "'", '"', '<', '>' ), '', $slug );
     $slug = trim( ltrim( empty( $slug ) ? $alt : $slug, './' ) );
     return $this->get_filter( $slug, 'esc_slug', $text, $alt );
   }
@@ -1235,9 +1235,11 @@ class App {
           break;
         }
         $this->page = 'home';
-        $tpl = $this->theme( $this->page( 'tpl' ) );
-        if ( is_file( $tpl ) ) {
-          require_once $tpl;
+        $tpl = $this->page( 'tpl' );
+        $tpl_path = $this->theme( $tpl );
+        $templates = $this->_l( 'tpl' );
+        if ( in_array( $tpl, $templates ) && is_file( $tpl_path ) ) {
+          require_once $tpl_path;
           break;
         }
         require_once $this->theme( 'theme.php' );
@@ -1245,9 +1247,11 @@ class App {
       case $this->page( 'pub' ):
         $type = $this->page( 'type' );
         $this->get_action( $type . '_type' );
-        $tpl = $this->theme( $this->page( 'tpl' ) );
-        if ( is_file( $tpl ) ) {
-          require_once $tpl;
+        $tpl = $this->page( 'tpl' );
+        $tpl_path = $this->theme( $tpl );
+        $templates = $this->_l( 'tpl' );
+        if ( in_array( $tpl, $templates ) && is_file( $tpl_path ) ) {
+          require_once $tpl_path;
           break;
         }
         require_once $this->theme( 'theme.php' );
@@ -1257,9 +1261,12 @@ class App {
         $this->page = '404';
         http_response_code(404);
         $this->get_action( '404', $page );
-        $tpl = $this->theme( $this->page( 'tpl' ) );
-        if ( is_file( $tpl ) ) {
-          require_once $tpl;
+        $tpl = $this->page( 'tpl' );
+        $tpl_path = $this->theme( $tpl );
+        $templates = $this->_l( 'tpl' );
+        if ( in_array( $tpl, $templates ) && is_file( $tpl_path ) ) {
+          require_once $tpl_path;
+          break;
         }
         require_once $this->theme( 'theme.php' );
         break;
