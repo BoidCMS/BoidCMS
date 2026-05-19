@@ -1147,8 +1147,8 @@ class App {
               $this->go( $this->admin_url( '?page=settings' ) );
             }
             $data = $this->data();
-            unset( $_POST[ 'token' ], $_POST[ 'save' ] );
-            $data[ 'site' ] = array_merge( $data[ 'site' ], $_POST );
+            $allowed_keys = [ 'lang', 'title', 'subtitle', 'keywords', 'descr', 'email', 'username', 'url', 'admin', 'blog', 'footer' ];
+            $data[ 'site' ] = array_merge( $data[ 'site' ], array_intersect_key( $_POST, array_flip( $allowed_keys ) ) );
             $keys = array_keys( $data[ 'site' ] );
             $data[ 'site' ] = array_map( fn ( $value, $key ) => in_array( $key, [ 'lang', 'title', 'subtitle', 'keywords', 'descr', 'footer' ] ) ? htmlspecialchars( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8', false ) : $value, $data[ 'site' ], $keys );
             $data[ 'site' ] = array_combine( $keys, $data[ 'site' ] );
