@@ -719,11 +719,50 @@ class App {
         <input type="submit" name="login" value="Login" class="ss-btn ss-mobile ss-w-4">
       </form>';
       if ( isset( $_POST[ 'login' ] ) ) {
+        # Brute-force protection: track failed login attempts
+        $bf_file = $this->root( 'data/login-attempts.json' );
+        $bf_max = 5;
+        $bf_window = 900; # 15 minutes
+        $bf_ip = ( $_SERVER[ 'REMOTE_ADDR' ] ?? '127.0.0.1' );
+        $bf_attempts = array();
+        if ( is_file( $bf_file ) ) {
+          $bf_raw = file_get_contents( $bf_file );
+          $bf_attempts = json_decode( $bf_raw, true );
+          if ( ! is_array( $bf_attempts ) ) {
+            $bf_attempts = array();
+          }
+        }
+        # Clean expired entries
+        $bf_now = time();
+        foreach ( $bf_attempts as $bf_addr => $bf_data ) {
+          if ( ( $bf_now - $bf_data[ 'first' ] ) > $bf_window ) {
+            unset( $bf_attempts[ $bf_addr ] );
+          }
+        }
+        # Check if this IP is blocked
+        if ( isset( $bf_attempts[ $bf_ip ] ) && $bf_attempts[ $bf_ip ][ 'count' ] >= $bf_max ) {
+          $bf_wait = ( $bf_window - ( $bf_now - $bf_attempts[ $bf_ip ][ 'first' ] ) );
+          $bf_mins = ceil( $bf_wait / 60 );
+          $this->alert( sprintf( 'Too many failed login attempts. Please try again in %d minute(s).', $bf_mins ), 'error' );
+          $this->go( $this->admin_url() );
+        }
+        # Record this attempt before auth() — auth() may exit on token mismatch,
+        # so incrementing must happen first to prevent brute-force bypass
+        # via repeated requests with invalid CSRF tokens.
+        if ( ! isset( $bf_attempts[ $bf_ip ] ) ) {
+          $bf_attempts[ $bf_ip ] = array( 'count' => 1, 'first' => $bf_now );
+        } else {
+          $bf_attempts[ $bf_ip ][ 'count' ]++;
+        }
+        file_put_contents( $bf_file, json_encode( $bf_attempts, JSON_FORCE_OBJECT ), LOCK_EX );
         $this->auth();
         $this->get_action( 'on_login' );
         $username = ( $_POST[ 'username' ] ?? '' );
         $password = ( $_POST[ 'password' ] ?? '' );
         if ( hash_equals( $this->get( 'username' ), $username ) && password_verify( $password, $this->get( 'password' ) ) ) {
+          # Reset attempts on successful login
+          unset( $bf_attempts[ $bf_ip ] );
+          file_put_contents( $bf_file, json_encode( $bf_attempts, JSON_FORCE_OBJECT ), LOCK_EX );
           session_regenerate_id( true );
           $_SESSION[ 'logged_in' ] = true;
           $_SESSION[ 'root' ] = $this->root;
@@ -879,11 +918,11 @@ class App {
                 ' . $this->get_action( 'type' ) . '
               </select>
               <label for="title" class="ss-label">Title <span class="ss-red">*</span></label>
-              <input type="text" id="title" name="title" placeholder="Page title" value="' . $data[ 'title' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
+              <input type="text" id="title" name="title" placeholder="Page title" value="' . $this->esc( $data[ 'title' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto" required>
               <label for="descr" class="ss-label">Description</label>
               <textarea rows="5" id="descr" name="descr" placeholder="Page description" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $data[ 'descr' ] ) . '</textarea>
               <label for="keywords" class="ss-label">Keywords</label>
-              <input type="text" id="keywords" name="keywords" placeholder="Keywords, for, seo" value="' . $data[ 'keywords' ] . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
+              <input type="text" id="keywords" name="keywords" placeholder="Keywords, for, seo" value="' . $this->esc( $data[ 'keywords' ] ) . '" class="ss-input ss-mobile ss-w-6 ss-mx-auto">
               <label for="content" class="ss-label">Content</label>
               <textarea rows="20" id="content" name="content" placeholder="Start writing ✍" class="ss-textarea ss-mobile ss-w-6 ss-mx-auto">' . $this->esc( $data[ 'content' ] ) . '</textarea>
               <label for="permalink" class="ss-label">Permalink</label>
@@ -981,6 +1020,9 @@ class App {
                 <h4 class="ss-monospace ss-responsive">' . $media . '</h4>
                 <div class="ss-btn-group ss-full ss-my-4">
                   <a href="' . $this->url( 'media/' . $media ) . '" target="_blank" class="ss-btn ss-w-5">View</a>
+                  <!-- CSRF token in URL: the token is exposed in the URL query string.
+                       For sensitive actions, use POST forms to avoid token leakage
+                       via referer headers, browser history, or shoulder surfing. -->
                   <a href="' . $this->admin_url( '?page=media&action=delete&file=' . $media . '&token=' . $this->token(), true ) . '" class="ss-btn ss-error ss-w-5">Delete</a>
                 </div>
                 ' . $this->get_action( 'media_list_end', $media ) . '
@@ -1021,6 +1063,9 @@ class App {
               ' . $this->get_action( 'plugin_list_top', $plugin ) . '
               <h4 class="ss-monospace ss-responsive">' . ucwords( str_replace( '-', ' ', $plugin ) ) . '</h4>
               <div class="ss-btn-group ss-full ss-my-4">
+                <!-- CSRF token in URL: the token is exposed in the URL query string.
+                     For sensitive actions, use POST forms to avoid token leakage
+                     via referer headers, browser history, or shoulder surfing. -->
                 <a href="' . $this->admin_url( '?page=plugins&action=' . ( $this->installed( $plugin ) ? 'uninstall' : 'install' ) . '&plugin=' . $plugin . '&token=' . $this->token(), true ) . '" class="ss-btn ss-w-5">' . ( $this->installed( $plugin ) ? 'Uninstall' : 'Install' ) . '</a>
                 <a ' . ( $this->installed( $plugin ) ? 'href="' . $this->admin_url( '?page=' . $plugin, true ) . '" ' : '' ) . 'class="ss-btn ss-inverted ss-w-5' . ( $this->installed( $plugin ) ? '' : ' ss-disabled' ) . '">Configure</a>
               </div>
@@ -1032,19 +1077,20 @@ class App {
             $this->auth( post: false );
             $this->get_action( 'on_plugin' );
             $plugin = ( $_GET[ 'plugin' ] ?? '' );
+            $plugin_display = ucwords( str_replace( '-', ' ', $this->esc( $plugin ) ) );
             if ( $action === 'install' ) {
               if ( $this->install( $plugin ) ) {
-                $this->alert( sprintf( 'Plugin <b>%s</b> has been installed successfully.', ucwords( str_replace( '-', ' ', $plugin ) ) ), 'success' );
+                $this->alert( sprintf( 'Plugin <b>%s</b> has been installed successfully.', $plugin_display ), 'success' );
                 $this->go( $this->admin_url( '?page=plugins' ) );
               }
-              $this->alert( sprintf( 'Plugin <b>%s</b> was not installed, please try again.', ucwords( str_replace( '-', ' ', $plugin ) ) ), 'error' );
+              $this->alert( sprintf( 'Plugin <b>%s</b> was not installed, please try again.', $plugin_display ), 'error' );
               $this->go( $this->admin_url( '?page=plugins' ) );
             } else if ( $action === 'uninstall' ) {
               if ( $this->uninstall( $plugin ) ) {
-                $this->alert( sprintf( 'Plugin <b>%s</b> has been uninstalled successfully.', ucwords( str_replace( '-', ' ', $plugin ) ) ), 'success' );
+                $this->alert( sprintf( 'Plugin <b>%s</b> has been uninstalled successfully.', $plugin_display ), 'success' );
                 $this->go( $this->admin_url( '?page=plugins' ) );
               }
-              $this->alert( sprintf( 'Plugin <b>%s</b> was not uninstalled, please try again.', ucwords( str_replace( '-', ' ', $plugin ) ) ), 'error' );
+              $this->alert( sprintf( 'Plugin <b>%s</b> was not uninstalled, please try again.', $plugin_display ), 'error' );
               $this->go( $this->admin_url( '?page=plugins' ) );
             }
           }
@@ -1059,6 +1105,9 @@ class App {
               ' . $this->get_action( 'theme_list_top', $theme ) . '
               <h4 class="ss-monospace ss-responsive">' . ucwords( str_replace( '-', ' ', $theme ) ) . '</h4>
               <div class="ss-btn-group ss-full ss-my-4">
+                <!-- CSRF token in URL: the token is exposed in the URL query string.
+                     For sensitive actions, use POST forms to avoid token leakage
+                     via referer headers, browser history, or shoulder surfing. -->
                 <a ' . ( $this->get( 'theme' ) === $theme ? '' : 'href="' . $this->admin_url( '?page=themes&action=activate&theme=' . $theme . '&token=' . $this->token(), true ) . '" ' ) . 'class="ss-btn ss-w-5' . ( $this->get( 'theme' ) === $theme ? ' ss-disabled' : '' ) . '">Activate</a>
                 <a ' . ( $this->get( 'theme' ) === $theme ? 'href="' . $this->admin_url( '?page=' . $theme, true ) . '" ' : '' ) . 'class="ss-btn ss-inverted ss-w-5' . ( $this->get( 'theme' ) === $theme ? '' : ' ss-disabled' ) . '">Customize</a>
               </div>

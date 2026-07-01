@@ -1,4 +1,13 @@
 <?php
+# PHP built-in server protection: block direct access to sensitive directories
+# (.htaccess rules are ignored by php -S and when AllowOverride is disabled)
+$uri = $_SERVER['REQUEST_URI'] ?? '';
+$path = parse_url( $uri, PHP_URL_PATH );
+if ( preg_match( '#^/(\.git|app|data)/#', $path ) ) {
+    http_response_code( 404 );
+    exit( 'Not Found' );
+}
+
 /**
  *
  * Simple, fast, super extensible
