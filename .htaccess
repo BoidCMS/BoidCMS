@@ -4,4 +4,5 @@ RewriteEngine on
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.+)$ index.php?p=$1 [QSA,L]
+RewriteRule ^\.git/? - [R=404,L]
 RewriteRule ^(app|data)/.*$ - [R=404,L]
