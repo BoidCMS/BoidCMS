@@ -746,6 +746,15 @@ class App {
           $this->alert( sprintf( 'Too many failed login attempts. Please try again in %d minute(s).', $bf_mins ), 'error' );
           $this->go( $this->admin_url() );
         }
+        # Record this attempt before auth() — auth() may exit on token mismatch,
+        # so incrementing must happen first to prevent brute-force bypass
+        # via repeated requests with invalid CSRF tokens.
+        if ( ! isset( $bf_attempts[ $bf_ip ] ) ) {
+          $bf_attempts[ $bf_ip ] = array( 'count' => 1, 'first' => $bf_now );
+        } else {
+          $bf_attempts[ $bf_ip ][ 'count' ]++;
+        }
+        file_put_contents( $bf_file, json_encode( $bf_attempts, JSON_FORCE_OBJECT ), LOCK_EX );
         $this->auth();
         $this->get_action( 'on_login' );
         $username = ( $_POST[ 'username' ] ?? '' );
@@ -760,13 +769,6 @@ class App {
           $this->get_action( 'login_success' );
           $this->go( $this->admin_url() );
         }
-        # Record failed attempt
-        if ( ! isset( $bf_attempts[ $bf_ip ] ) ) {
-          $bf_attempts[ $bf_ip ] = array( 'count' => 1, 'first' => $bf_now );
-        } else {
-          $bf_attempts[ $bf_ip ][ 'count' ]++;
-        }
-        file_put_contents( $bf_file, json_encode( $bf_attempts, JSON_FORCE_OBJECT ), LOCK_EX );
         $this->get_action( 'login_error', $username, $password );
         $this->alert( 'Incorrect username or password, please try again.', 'error' );
         $this->go( $this->admin_url() );
